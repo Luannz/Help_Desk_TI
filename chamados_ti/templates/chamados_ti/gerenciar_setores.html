@@ -1,0 +1,484 @@
+{% extends 'chamados_ti/base.html' %}
+
+{% block content %}
+<div class="row animate__animated animate__fadeIn">
+    <div class="col-lg-11 mx-auto">
+
+        <div class="mb-4">
+            <h3 class="fw-bold m-0 text-dark" style="letter-spacing: -0.5px;">
+                <i class="fas fa-location-dot me-2 text-secondary"></i>Gerenciar Setores
+            </h3>
+            <p class="text-muted small m-0">Vincule equipamentos aos setores da empresa.</p>
+        </div>
+
+        <div class="row g-4">
+
+            <!-- ── Coluna do formulário de cadastro/edição ── -->
+            <div class="col-md-5">
+                <div class="card border-0 shadow-sm" style="border-radius: 12px;">
+                    <div class="card-body p-4">
+
+                        <h5 class="fw-bold text-dark mb-4" style="font-size: 1.05rem;">
+                            {% if editando %}
+                                <i class="fas fa-edit text-warning me-2"></i>Editando Setor
+                            {% else %}
+                                <i class="fas fa-plus-circle text-primary me-2"></i>Novo Setor
+                            {% endif %}
+                        </h5>
+
+                        <form method="post" id="setorForm" class="text-dark">
+                            {% csrf_token %}
+
+                            <!-- Nome -->
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold text-muted text-uppercase" style="letter-spacing: 0.5px;">
+                                    Nome do Setor
+                                </label>
+                                {% if form.nome.errors %}
+                                    <div class="text-danger small mb-1">{{ form.nome.errors }}</div>
+                                {% endif %}
+                                <div class="form-control-container">{{ form.nome }}</div>
+                            </div>
+
+                            <!-- Descrição -->
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold text-muted text-uppercase" style="letter-spacing: 0.5px;">
+                                    Descrição / Notas
+                                </label>
+                                <div class="form-control-container">{{ form.descricao }}</div>
+                            </div>
+
+                            <!-- Campo hidden que acumula os IDs para o POST -->
+                            {{ form.equipamentos_ids }}
+
+                            <!-- ── Seletor de equipamentos ── -->
+                            <div class="mb-4">
+                                <label class="form-label small fw-bold text-muted text-uppercase mb-2" style="letter-spacing: 0.5px;">
+                                    Equipamentos do Setor
+                                </label>
+
+                                <!-- Barra de pesquisa -->
+                                <div class="input-group mb-2 shadow-sm" style="border-radius: 8px; overflow: hidden;">
+                                    <span class="input-group-text bg-white border-end-0 text-muted">
+                                        <i class="fas fa-search small"></i>
+                                    </span>
+                                    <input type="text" id="search_input"
+                                           class="form-control border-start-0 ps-1 py-2"
+                                           placeholder="Buscar equipamento..."
+                                           style="font-size: 0.88rem; box-shadow: none;">
+                                </div>
+
+                                <!-- Botões de categoria -->
+                                <div class="d-flex flex-wrap gap-1 mb-2" id="cat_buttons">
+                                    <button type="button" class="btn btn-xs btn-primary btn-cat active" data-cat="TODAS">
+                                        Todas
+                                    </button>
+                                    <!-- Gerados dinamicamente pelo JS após o fetch -->
+                                </div>
+
+                                <!-- Lista de equipamentos disponíveis -->
+                                <div class="input-group mb-3">
+                                    <select id="lista_equipamentos" class="form-select border-primary-subtle py-2" size="5"
+                                            style="border-radius: 8px 0 0 8px; font-size: 0.9rem;">
+                                    </select>
+                                    <div class="d-flex flex-column gap-1 border border-start-0 border-primary-subtle bg-light p-1"
+                                         style="border-radius: 0 8px 8px 0;">
+                                        <button type="button" id="btn_adicionar"
+                                                class="btn btn-primary flex-grow-1 d-flex align-items-center justify-content-center"
+                                                title="Adicionar selecionado">
+                                            <i class="fas fa-plus"></i>
+                                        </button>
+                                        <button type="button" id="btn_add_todos"
+                                                class="btn btn-outline-primary btn-sm px-1 fw-bold"
+                                                style="font-size: 0.68rem;" title="Adicionar todos os visíveis">
+                                            Todos
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Badges dos equipamentos já adicionados -->
+                                <div class="small fw-bold text-muted text-uppercase mb-1" style="font-size: 0.72rem; letter-spacing: 0.5px;">
+                                    Alocados neste setor:
+                                </div>
+                                <div id="badges_container"
+                                     class="p-3 bg-light rounded"
+                                     style="min-height: 80px; border: 1px dashed #cbd5e1; border-radius: 8px;">
+                                    <div class="text-center text-muted py-2 small fst-italic" id="msg_vazio">
+                                        <i class="fas fa-boxes me-1"></i> Nenhum equipamento alocado
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button type="submit"
+                                    class="btn {% if editando %}btn-warning text-dark{% else %}btn-primary{% endif %} w-100 fw-semibold py-2"
+                                    style="border-radius: 8px; font-size: 0.9rem;">
+                                <i class="fas {% if editando %}fa-save{% else %}fa-plus{% endif %} me-2"></i>
+                                {% if editando %}Salvar Alterações{% else %}Cadastrar Setor{% endif %}
+                            </button>
+
+                            {% if editando %}
+                            <a href="{% url 'gerenciar_setores' %}"
+                               class="btn btn-link w-100 mt-2 text-muted text-decoration-none small fw-semibold">
+                                <i class="fas fa-times me-1"></i>Cancelar Edição
+                            </a>
+                            {% endif %}
+                        </form>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Coluna da lista de setores ── -->
+            <div class="col-md-7">
+                <div class="card border-0 shadow-sm" style="border-radius: 12px;">
+                    <div class="card-header border-0 bg-light p-3 d-flex justify-content-between align-items-center"
+                         style="border-radius: 12px 12px 0 0;">
+                        <span class="fw-bold text-dark m-0" style="font-size: 0.95rem;">
+                            <i class="fas fa-list text-secondary me-2"></i>Lista de Setores
+                        </span>
+                        <span class="badge bg-dark bg-opacity-10 text-dark fw-bold px-2 py-1"
+                              style="font-size: 0.75rem; border-radius: 6px;">
+                            {{ setores.count }} Total
+                        </span>
+                    </div>
+
+                    <div class="card-body p-0">
+                        {% if setores %}
+                        <div class="list-group list-group-flush" style="border-radius: 0 0 12px 12px;">
+                            {% for s in setores %}
+                            <div class="list-group-item p-3 border-light transform-hover">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="pe-3" style="width: 70%;">
+                                        <h6 class="fw-bold text-dark mb-1" style="font-size: 0.95rem;">{{ s.nome }}</h6>
+                                        {% if s.descricao %}
+                                            <p class="text-secondary mb-2 small text-truncate" style="max-width: 350px;">
+                                                {{ s.descricao }}
+                                            </p>
+                                        {% endif %}
+                                        <div class="mt-2 d-flex flex-wrap gap-1">
+                                            {% if s.equipamentos.all %}
+                                                {% for eq in s.equipamentos.all %}
+                                                    <span class="badge bg-white text-dark border px-2 py-1"
+                                                          style="font-size: 0.7rem; border-radius: 4px; font-weight: 500;">
+                                                        <i class="fas fa-laptop text-primary opacity-50 me-1"
+                                                           style="font-size: 0.65rem;"></i>{{ eq.nome }}
+                                                    </span>
+                                                {% endfor %}
+                                            {% else %}
+                                                <span class="text-muted fst-italic" style="font-size: 0.72rem;">
+                                                    Nenhum item adicionado
+                                                </span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="d-flex flex-column align-items-end gap-2">
+                                        <span class="text-muted" style="font-size: 0.72rem; font-family: monospace;">
+                                            <i class="far fa-calendar me-1"></i>{{ s.criado_em|date:"d/m/Y" }}
+                                        </span>
+                                        <a href="{% url 'editar_setor' s.id %}"
+                                           class="btn btn-light border btn-sm text-primary"
+                                           style="border-radius: 6px; padding: 0.25rem 0.5rem;">
+                                            <i class="fas fa-edit" style="font-size: 0.8rem;"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="text-center py-5 text-muted">
+                            <i class="fas fa-folder-open fa-2x mb-2 text-secondary opacity-25"></i>
+                            <p class="mb-0 small fw-semibold">Nenhum setor cadastrado.</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    // ── Referências aos elementos ─────────────────────────────────────────
+    const searchInput      = document.getElementById('search_input');
+    const catButtonsDiv    = document.getElementById('cat_buttons');
+    const listaSelect      = document.getElementById('lista_equipamentos');
+    const btnAdicionar     = document.getElementById('btn_adicionar');
+    const btnAddTodos      = document.getElementById('btn_add_todos');
+    const badgesContainer  = document.getElementById('badges_container');
+    const msgVazio         = document.getElementById('msg_vazio');
+    const hiddenIds        = document.getElementById('id_equipamentos_ids');
+
+    // ── Estado da aplicação ───────────────────────────────────────────────
+    let todosEquipamentos = {};   // { "Categoria Label": [{id, nome}, ...] }
+    let categoriaSelecionada = 'TODAS';
+    // Map de id → {id, nome, categoria} dos equipamentos já adicionados
+    let adicionados = new Map();
+
+    // ── 1. Busca os dados via API ─────────────────────────────────────────
+    fetch("{% url 'api_equipamentos' %}")
+        .then(r => r.json())
+        .then(dados => {
+            todosEquipamentos = dados;
+            criarBotoesCategorias();
+            atualizarLista();
+
+            // Pré-carrega equipamentos no modo edição
+            const idsIniciais = {{ ids_selecionados|default:"[]" }};
+            if (idsIniciais.length > 0) {
+                // Monta um map de id → {id, nome, categoria} para lookup rápido
+                const lookupGlobal = {};
+                for (const [catLabel, equips] of Object.entries(todosEquipamentos)) {
+                    equips.forEach(eq => { lookupGlobal[eq.id] = { ...eq, categoria: catLabel }; });
+                }
+                idsIniciais.forEach(id => {
+                    if (lookupGlobal[id]) adicionarEquipamento(lookupGlobal[id]);
+                });
+            }
+        })
+        .catch(() => {
+            listaSelect.innerHTML = '<option disabled>Erro ao carregar equipamentos</option>';
+        });
+
+    // ── 2. Cria os botões de categoria dinamicamente ──────────────────────
+    function criarBotoesCategorias() {
+        for (const catLabel of Object.keys(todosEquipamentos)) {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'btn btn-xs btn-outline-secondary btn-cat';
+            btn.dataset.cat = catLabel;
+            btn.textContent = catLabel;
+            catButtonsDiv.appendChild(btn);
+        }
+
+        // Delegação de eventos nos botões de categoria
+        catButtonsDiv.addEventListener('click', function (e) {
+            const btn = e.target.closest('.btn-cat');
+            if (!btn) return;
+
+            document.querySelectorAll('.btn-cat').forEach(b => {
+                b.classList.remove('btn-primary', 'active');
+                b.classList.add('btn-outline-secondary');
+            });
+            btn.classList.remove('btn-outline-secondary');
+            btn.classList.add('btn-primary', 'active');
+
+            categoriaSelecionada = btn.dataset.cat;
+            atualizarLista();
+        });
+    }
+
+    // ── 3. Atualiza a lista de equipamentos disponíveis ───────────────────
+    function atualizarLista() {
+        const termo = searchInput.value.toLowerCase().trim();
+        listaSelect.innerHTML = '';
+
+        // Decide quais categorias percorrer
+        const categorias = categoriaSelecionada === 'TODAS'
+            ? Object.entries(todosEquipamentos)
+            : [[categoriaSelecionada, todosEquipamentos[categoriaSelecionada] || []]];
+
+        let count = 0;
+        for (const [catLabel, equips] of categorias) {
+            for (const eq of equips) {
+                // Pula os já adicionados
+                if (adicionados.has(eq.id)) continue;
+                // Filtra pelo texto digitado
+                if (termo && !eq.nome.toLowerCase().includes(termo)) continue;
+
+                const opt = document.createElement('option');
+                opt.value = eq.id;
+                // Mostra a categoria entre colchetes quando está na aba "Todas"
+                opt.textContent = categoriaSelecionada === 'TODAS'
+                    ? `[${catLabel}] ${eq.nome}`
+                    : eq.nome;
+                opt.dataset.categoria = catLabel;
+                opt.dataset.nome = eq.nome;
+                listaSelect.appendChild(opt);
+                count++;
+            }
+        }
+
+        if (count === 0) {
+            const opt = document.createElement('option');
+            opt.disabled = true;
+            opt.textContent = 'Nenhum equipamento disponível...';
+            listaSelect.appendChild(opt);
+        }
+    }
+
+    // ── 4. Adiciona um equipamento ao setor ──────────────────────────────
+    function adicionarEquipamento(eq) {
+        if (adicionados.has(eq.id)) return;  // já existe, ignora
+
+        adicionados.set(eq.id, eq);
+        atualizarHiddenField();
+        renderBadges();
+        atualizarLista();
+    }
+
+    // ── 5. Remove um equipamento do setor ────────────────────────────────
+    function removerEquipamento(id) {
+        adicionados.delete(id);
+        atualizarHiddenField();
+        renderBadges();
+        atualizarLista();
+    }
+
+    // ── 6. Sincroniza o campo hidden com os IDs selecionados ─────────────
+    function atualizarHiddenField() {
+        hiddenIds.value = Array.from(adicionados.keys()).join(',');
+    }
+
+    // ── 7. Renderiza os badges agrupados por categoria ────────────────────
+    function renderBadges() {
+        badgesContainer.innerHTML = '';
+
+        if (adicionados.size === 0) {
+            badgesContainer.innerHTML = `
+                <div class="text-center text-muted py-2 small fst-italic">
+                    <i class="fas fa-boxes me-1"></i> Nenhum equipamento alocado
+                </div>`;
+            return;
+        }
+
+        // Agrupa os adicionados por categoria
+        const porCategoria = {};
+        for (const eq of adicionados.values()) {
+            if (!porCategoria[eq.categoria]) porCategoria[eq.categoria] = [];
+            porCategoria[eq.categoria].push(eq);
+        }
+
+        for (const [catLabel, equips] of Object.entries(porCategoria)) {
+            const bloco = document.createElement('div');
+            bloco.className = 'mb-3 pb-2 border-bottom border-light-subtle';
+            bloco.style.cssText = 'border-color: #e2e8f0 !important;';
+
+            const titulo = document.createElement('div');
+            titulo.className = 'small fw-bold text-muted mb-2 d-flex align-items-center gap-1';
+            titulo.style.fontSize = '0.72rem';
+            titulo.innerHTML = `<i class="fas fa-tag opacity-50"></i> ${catLabel}`;
+            bloco.appendChild(titulo);
+
+            const wrap = document.createElement('div');
+            wrap.className = 'd-flex flex-wrap gap-2';
+
+            equips.forEach(eq => {
+                const badge = document.createElement('span');
+                badge.className = 'badge bg-white text-dark border d-flex align-items-center gap-2 px-2 py-1 shadow-sm';
+                badge.style.cssText = 'border-radius: 6px; font-weight: 500; font-size: 0.82rem;';
+                badge.innerHTML = `
+                    <span>${eq.nome}</span>
+                    <button type="button"
+                            class="btn-close p-0 m-0"
+                            style="font-size: 0.6rem; box-shadow: none;"
+                            data-id="${eq.id}"
+                            aria-label="Remover ${eq.nome}"></button>
+                `;
+                wrap.appendChild(badge);
+            });
+
+            bloco.appendChild(wrap);
+            badgesContainer.appendChild(bloco);
+        }
+
+        // Remove borda do último bloco
+        const blocos = badgesContainer.querySelectorAll('.border-bottom');
+        if (blocos.length > 0) {
+            blocos[blocos.length - 1].classList.remove('border-bottom', 'mb-3', 'pb-2');
+        }
+    }
+
+    // ── 8. Eventos ────────────────────────────────────────────────────────
+
+    // Filtro por texto
+    searchInput.addEventListener('input', atualizarLista);
+
+    // Botão adicionar selecionado
+    btnAdicionar.addEventListener('click', function () {
+        const opt = listaSelect.options[listaSelect.selectedIndex];
+        if (!opt || opt.disabled) return;
+        adicionarEquipamento({
+            id: parseInt(opt.value),
+            nome: opt.dataset.nome,
+            categoria: opt.dataset.categoria,
+        });
+    });
+
+    // Duplo clique na lista também adiciona
+    listaSelect.addEventListener('dblclick', function () {
+        const opt = listaSelect.options[listaSelect.selectedIndex];
+        if (!opt || opt.disabled) return;
+        adicionarEquipamento({
+            id: parseInt(opt.value),
+            nome: opt.dataset.nome,
+            categoria: opt.dataset.categoria,
+        });
+    });
+
+    // Botão adicionar todos os visíveis
+    btnAddTodos.addEventListener('click', function () {
+        Array.from(listaSelect.options).forEach(opt => {
+            if (!opt.disabled && opt.value) {
+                adicionarEquipamento({
+                    id: parseInt(opt.value),
+                    nome: opt.dataset.nome,
+                    categoria: opt.dataset.categoria,
+                });
+            }
+        });
+    });
+
+    // Delegação para o botão X dos badges
+    badgesContainer.addEventListener('click', function (e) {
+        const btn = e.target.closest('.btn-close');
+        if (!btn) return;
+        removerEquipamento(parseInt(btn.dataset.id));
+    });
+});
+</script>
+
+<style>
+    .form-control-container input,
+    .form-control-container textarea {
+        display: block;
+        width: 100%;
+        padding: 0.45rem 0.75rem;
+        font-size: 0.9rem;
+        color: #334155;
+        background-color: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        transition: border-color .15s ease-in-out, box-shadow .15s ease-in-out;
+    }
+    .form-control-container input:focus,
+    .form-control-container textarea:focus {
+        color: #1e293b;
+        background-color: #fff;
+        border-color: #3b82f6;
+        outline: 0;
+        box-shadow: 0 0 0 0.25rem rgba(59, 130, 246, .1);
+    }
+    .btn-xs {
+        padding: 0.2rem 0.45rem;
+        font-size: 0.72rem;
+        border-radius: 4px;
+    }
+    #lista_equipamentos {
+        scrollbar-width: thin;
+    }
+    #lista_equipamentos option {
+        padding: 6px 10px;
+        cursor: pointer;
+    }
+    #lista_equipamentos option:checked {
+        background-color: #3b82f6;
+        color: #fff;
+    }
+    .transform-hover { transition: background-color 0.15s ease; }
+    .transform-hover:hover { background-color: #f8fafc; }
+</style>
+{% endblock %}

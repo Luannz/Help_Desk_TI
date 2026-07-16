@@ -1,0 +1,57 @@
+{% extends 'chamados_ti/base.html' %}
+
+{% block content %}
+<div class="row justify-content-center align-items-center" style="min-height: 75vh;">
+    <div class="col-12 col-sm-10 col-md-6 col-lg-4">
+        <div class="card shadow-lg border-0 animate__animated animate__fadeInUp" style="border-radius: 16px;">
+            <div class="card-body p-4 p-sm-5">
+                
+                <div class="text-center mb-4">
+                    <div class="d-inline-flex align-items-center justify-content-center bg-primary bg-opacity-10 text-primary rounded-3 p-3 mb-3" style="width: 60px; height: 60px;">
+                        <i class="fas fa-headset fa-2x"></i>
+                    </div>
+                    <h4 class="fw-bold mb-1" style="letter-spacing: -0.5px;">Lynd Service Desk</h4>
+                    <p class="text-muted small">Faça login para gerenciar seus chamados</p>
+                </div>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Usuário</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0 text-muted"><i class="fas fa-user-astronaut"></i></span>
+                            <input type="text" name="username" class="form-control border-start-0 bg-light" placeholder="Seu usuário" required style="border-radius: 0 8px 8px 0;">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label small fw-semibold text-secondary">Senha</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0 text-muted"><i class="fas fa-lock"></i></span>
+                            <input type="password" name="password" class="form-control border-start-0 bg-light" placeholder="••••••••" required style="border-radius: 0 8px 8px 0;">
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary w-100 py-2.5 fw-semibold shadow-sm animate-pulse">
+                        <i class="fas fa-sign-in-alt me-2"></i>Acessar Painel
+                    </button>
+                </form>
+                <div class="text-center mt-4">
+                    <p class="text-muted small mb-0">
+                        Não possui uma conta? 
+                        <a href="{% url 'registrar' %}" class="text-primary fw-semibold text-decoration-none">
+                            Cadastre-se aqui
+                        </a>
+                    </p>
+                </div>
+                
+            </div>
+        </div>
+        
+        <div class="text-center mt-4">
+            <p class="text-muted small">&copy; 2026 Lynd.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

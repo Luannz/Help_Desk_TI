@@ -1,0 +1,213 @@
+{% extends 'chamados_ti/base.html' %}
+
+{% block content %}
+<div class="row animate__animated animate__fadeIn">
+    <div class="col-lg-11 mx-auto">
+        <div class="mb-4">
+            <h3 class="fw-bold m-0 text-dark" style="letter-spacing: -0.5px;">
+                <i class="fas fa-server me-2 text-secondary"></i>Gerenciar Equipamentos
+            </h3>
+            <p class="text-muted small m-0">Monitore, cadastre e gerencie o maquinário ativo e seus respectivos tipos genéricos.</p>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-md-5">
+                <div class="card border-0 shadow-sm" style="border-radius: 12px;">
+                    <div class="card-body p-4">
+                        <h5 class="fw-bold text-dark mb-4" style="font-size: 1.05rem;">
+                            {% if editando %}
+                                <i class="fas fa-edit text-warning me-2"></i>Editando Equipamento
+                            {% else %}
+                                <i class="fas fa-plus-circle text-primary me-2"></i>Novo Equipamento
+                            {% endif %}
+                        </h5>
+                        
+                        <form method="post" enctype="multipart/form-data" class="text-dark">
+                            {% csrf_token %}
+                            
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold text-muted text-uppercase" style="letter-spacing: 0.5px;">Nome do Equipamento</label>
+                                <div class="form-control-container">
+                                    {{ form.nome }}
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold text-muted text-uppercase" style="letter-spacing: 0.5px;">Categoria</label>
+                                <div class="form-control-container">
+                                    {{ form.categoria }}
+                                </div>
+                            </div>
+                                                                                                                                                    
+                            <button type="submit" class="btn {% if editando %}btn-warning text-dark{% else %}btn-primary{% endif %} w-100 fw-semibold py-2" style="border-radius: 8px; font-size: 0.9rem;">
+                                <i class="fas {% if editando %}fa-save{% else %}fa-plus{% endif %} me-2"></i>
+                                {% if editando %}Salvar Alterações{% else %}Cadastrar Equipamento{% endif %}
+                            </button>
+
+                            {% if editando %}
+                                <a href="{% url 'gerenciar_equipamentos' %}?page={{ request.GET.page }}{% if busca %}&search={{ busca }}{% endif %}" 
+                                   class="btn btn-link w-100 mt-2 text-muted text-decoration-none small fw-semibold">
+                                    <i class="fas fa-times me-1"></i>Cancelar Edição
+                                </a>
+                            {% endif %}
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-7">
+                <div class="card border-0 shadow-sm" style="border-radius: 12px;">
+                    <div class="card-header border-0 bg-light p-3 d-flex justify-content-between align-items-center" style="border-radius: 12px 12px 0 0;">
+                        <span class="fw-bold text-dark m-0" style="font-size: 0.95rem;">
+                            <i class="fas fa-list text-secondary me-2"></i>Inventário Ativo
+                        </span>
+                        <span class="badge bg-dark bg-opacity-10 text-dark fw-bold px-2.5 py-1" style="font-size: 0.75rem; border-radius: 6px;">
+                            {{ equipamentos.paginator.count }} Total
+                        </span>
+                    </div>
+
+                    <div class="card-body p-3 border-bottom border-light">
+                        <form method="GET" class="m-0">
+                            <div class="input-group">
+                                <input type="text" name="search" class="form-control bg-light border-0 small px-3" style="border-radius: 8px 0 0 8px; font-size: 0.85rem;" placeholder="Filtrar por pesquisa..." value="{{ busca }}">
+                                <button class="btn btn-primary px-3" style="border-radius: 0 8px 8px 0;" type="submit">
+                                    <i class="fas fa-search" style="font-size: 0.85rem;"></i>
+                                </button>
+                                {% if busca %}
+                                    <a href="{% url 'gerenciar_equipamentos' %}" class="btn btn-secondary small ms-2 d-flex align-items-center" style="border-radius: 8px; font-size: 0.8rem;">Limpar</a>
+                                {% endif %}
+                            </div>
+                        </form>
+                    </div>
+    
+                    <div class="card-body p-0">
+                        {% if equipamentos %}
+                        <div class="list-group list-group-flush">
+                            {% for equipamento in equipamentos %}
+                            <div class="list-group-item p-3 border-light transform-hover">
+                                <div class="row align-items-center g-3">
+                                    
+                                    <div class="col-auto">
+                                        <div class="rounded d-flex align-items-center justify-content-center text-primary text-opacity-75 border" 
+                                            style="width: 52px; height: 52px; background-color: #f1f5f9; border-color: #e2e8f0 !important;">
+                                            {% if equipamento.categoria == 'perifericos' %}
+                                                <i class="fas fa-mouse" style="font-size: 1.25rem;" title="Periféricos"></i>
+                                            {% elif equipamento.categoria == 'hardware' %}
+                                                <i class="fas fa-laptop" style="font-size: 1.25rem;" title="Hardware"></i>
+                                            {% elif equipamento.categoria == 'rede' %}
+                                                <i class="fas fa-wifi" style="font-size: 1.25rem;" title="Rede"></i>
+                                            {% elif equipamento.categoria == 'suprimentos' %}
+                                                <i class="fas fa-print" style="font-size: 1.25rem;" title="Suprimentos"></i>
+                                            {% else %}
+                                                <i class="fas fa-box" style="font-size: 1.25rem;"></i>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col text-truncate">
+                                        <h6 class="fw-bold text-dark mb-1 text-truncate" style="font-size: 0.95rem;">{{ equipamento.nome }}</h6>
+                                        <div class="d-flex flex-wrap gap-1.5 align-items-center">                                                                                                                  
+                                            <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-10 fw-semibold px-1.5 py-0.5" style="font-size: 0.68rem; border-radius: 4px;">
+                                                <i class="fas fa-tag me-1 text-secondary opacity-75"></i>{{ equipamento.get_categoria_display }}
+                                            </span>                                    
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-auto d-flex align-items-center gap-1">
+                                        <div class="text-end me-2 d-none d-sm-block">
+                                            <span class="text-muted d-block" style="font-size: 0.7rem; font-family: monospace;">
+                                                <i class="far fa-calendar me-1"></i>{{ equipamento.id|default:"" }}</span>
+                                        </div>                                      
+
+                                        <a href="{% url 'editar_equipamento' equipamento.id %}?page={{ equipamentos.number }}{% if busca %}&search={{ busca }}{% endif %}" class="btn btn-light border btn-sm text-primary shadow-sm" style="border-radius: 6px; padding: 0.25rem 0.5rem;" title="Editar Equipamento"> 
+                                            <i class="fas fa-edit" style="font-size: 0.8rem;"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="p-3 bg-light border-top border-light d-flex justify-content-center" style="border-radius: 0 0 12px 12px;">
+                            <nav aria-label="Navegação de páginas">
+                                <ul class="pagination pagination-sm mb-0 gap-1">
+                                    {% if equipamentos.has_previous %}
+                                        <li class="page-item">
+                                            <a class="page-link border-0 text-secondary bg-transparent" href="?page=1{% if busca %}&search={{ busca }}{% endif %}"><i class="fas fa-angle-double-left"></i></a>
+                                        </li>
+                                        <li class="page-item">
+                                            <a class="page-link border rounded text-dark bg-white px-2.5" href="?page={{ equipamentos.previous_page_number }}{% if busca %}&search={{ busca }}{% endif %}">Anterior</a>
+                                        </li>
+                                    {% endif %}
+
+                                    <li class="page-item disabled">
+                                        <span class="page-link border-0 bg-transparent text-muted fw-semibold">
+                                            {{ equipamentos.number }} de {{ equipamentos.paginator.num_pages }}
+                                        </span>
+                                    </li>
+
+                                    {% if equipamentos.has_next %}
+                                        <li class="page-item">
+                                            <a class="page-link border rounded text-dark bg-white px-2.5" href="?page={{ equipamentos.next_page_number }}{% if busca %}&search={{ busca }}{% endif %}">Próxima</a>
+                                        </li>
+                                        <li class="page-item">
+                                            <a class="page-link border-0 text-secondary bg-transparent" href="?page={{ equipamentos.paginator.num_pages }}{% if busca %}&search={{ busca }}{% endif %}"><i class="fas fa-angle-double-right"></i></a>
+                                        </li>
+                                    {% endif %}
+                                </ul>
+                            </nav>
+                        </div>
+
+                        {% else %}
+                        <div class="text-center py-5 text-muted">
+                            <i class="fas fa-cubes fa-2x mb-2 text-secondary opacity-25"></i>
+                            <p class="mb-0 small fw-semibold">Nenhum equipamento localizado nesta consulta.</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .form-control-container input, 
+    .form-control-container textarea, 
+    .form-control-container select {
+        display: block;
+        width: 100%;
+        padding: 0.45rem 0.75rem;
+        font-size: 0.9rem;
+        font-weight: 400;
+        line-height: 1.5;
+        color: #334155;
+        background-color: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        transition: border-color .15s ease-in-out, box-shadow .15s ease-in-out;
+    }
+    .form-control-container input:focus, 
+    .form-control-container textarea:focus, 
+    .form-control-container select:focus {
+        color: #1e293b;
+        background-color: #fff;
+        border-color: #3b82f6;
+        outline: 0;
+        box-shadow: 0 0 0 0.25rem rgba(59, 130, 246, .1);
+    }
+    .transform-hover {
+        transition: background-color 0.15s ease;
+    }
+    .transform-hover:hover {
+        background-color: #f8fafc;
+    }
+    .gap-1.5 {
+        gap: 0.375rem !important;
+    }
+    .page-link:hover {
+        background-color: #f1f5f9 !important;
+        color: #000 !important;
+    }
+</style>
+{% endblock %}

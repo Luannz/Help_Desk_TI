@@ -1,0 +1,360 @@
+{% extends 'chamados_ti/base.html' %}
+
+{% block content %}
+<div class="container-fluid animate__animated animate__fadeIn">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+        <div>
+            <h3 class="fw-bold m-0 text-dark" style="letter-spacing: -0.5px;">
+                <i class="fas fa-user-shield me-2 text-secondary"></i>Painel de Gestão
+            </h3>
+            <p class="text-muted small m-0">Controle operacional e distribuição de ordens de serviço.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <span class="badge bg-light text-muted border fw-semibold px-2.5 py-1.5" style="font-size: 0.8rem; border-radius: 8px;">
+                <i class="fas fa-layer-group me-1 text-primary opacity-75"></i> Setores: {{ setores.count }}
+            </span>
+            <span class="badge bg-light text-muted border fw-semibold px-2.5 py-1.5" style="font-size: 0.8rem; border-radius: 8px;">
+                <i class="fas fa-cog me-1 text-primary opacity-75"></i> Ativos: {{ equipamentos.count }}
+            </span>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-4" style="border-radius: 12px; background-color: #f8fafc;">
+        <div class="card-body p-2">
+            <div class="d-flex flex-wrap gap-2">
+                <a href="{% url 'criar_chamado' %}" class="btn btn-primary fw-semibold d-flex align-items-center" style="border-radius: 8px; font-size: 0.88rem;">
+                    <i class="fas fa-plus me-2"></i> Abrir Novo Chamado
+                </a>
+                <a href="#" class="btn btn-outline-secondary fw-semibold d-flex align-items-center bg-white" style="border-radius: 8px; font-size: 0.88rem;"> 
+                    <i class="fas fa-clock me-2"></i> Rotinas Preventivas
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-4" style="border-radius: 12px;">
+        <div class="card-header border-0 bg-light p-3 d-flex justify-content-between align-items-center" style="border-radius: 12px 12px 0 0; border-left: 4px solid #d97706 !important;">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                <span class="fw-bold text-dark m-0" style="font-size: 0.95rem;">Aguardando Designação</span>
+                <span class="badge bg-dark bg-opacity-10 text-dark ms-2 fw-bold px-2 py-1" style="font-size: 0.75rem; border-radius: 6px;">{{ chamados_novos.count }}</span>
+            </div>
+        </div>
+        
+        <div class="card-body p-0"> 
+            {% if chamados_novos %}
+                <div class="d-md-none">
+                    {% for chamado in chamados_novos %}
+                    <div class="p-3 border-bottom border-light">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div>
+                                <small class="text-muted d-block mb-1" style="font-family: monospace;">#{{ chamado.id }} • {{ chamado.criado_em|date:"d/m H:i" }}</small>
+
+                                
+                                <h6 class="fw-bold text-dark mb-0">
+                                    {% if chamado.tipo == 'equipamento' %}
+                                        {{ chamado.equipamento.nome }}
+                                    {% elif chamado.tipo == 'duvidas' %}
+                                        <span class="fw-bold text-dark">Dúvida: {{chamado.subcategoria_duvida}}</span>
+                                    {% else %}
+                                        <span class="fw-bold text-dar">Sistema: {{chamado.subcategoria_duvida}}</span>
+                                    {% endif %}
+                                </h6>
+                                {% if chamado.setor %}
+                                    <small class="text-muted"><i class="fas fa-map-marker-alt me-1" style="font-size: 0.75rem;"></i>{{ chamado.setor }}</small>
+                                {% endif %}
+                            </div>
+                            
+                            <span class="badge px-2 py-1 rounded fw-bold text-uppercase" style="font-size: 0.65rem;
+                                {% if chamado.prioridade == 1 %} background-color: #fee2e2; color: #991b1b;
+                                {% elif chamado.prioridade == 2 %} background-color: #fef3c7; color: #92400e;
+                                {% else %} background-color: #f1f5f9; color: #475569; {% endif %}">
+                                {{ chamado.get_prioridade_display }}
+                            </span>
+                        </div>
+                        
+                        <div class="bg-light p-2.5 rounded mb-3 description-box" style="cursor: pointer;" 
+                             onclick="abrirDescricao('{{ chamado.id }}', '{{ chamado.descricao|escapejs }}', '{{ chamado.solicitante.get_full_name|default:chamado.solicitante.username|escapejs }}', '{{ chamado.subcategoria_duvida|default:''|escapejs }}')">
+                            <p class="text-secondary m-0 text-truncate-custom" style="font-size: 0.82rem; line-height: 1.4;">
+                                <strong>Detalhe:</strong> {{ chamado.descricao|truncatechars:100 }}
+                            </p>
+                            <div class="mt-1 text-end">
+                                <small class="text-muted" style="font-size: 0.75rem;">Por: {{ chamado.solicitante.get_full_name|default:chamado.solicitante.username }}</small>
+                            </div>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="button" class="btn btn-outline-primary btn-sm fw-semibold" style="border-radius: 6px;" data-bs-toggle="modal" data-bs-target="#modalDesignar{{ chamado.id }}">
+                                <i class="fas fa-user-plus me-1"></i>Designar Operador
+                            </button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="table-responsive d-none d-md-block">
+                    <table class="table table-hover align-middle mb-0" style="font-size: 0.9rem;">
+                        <thead class="table-light text-secondary" style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px;">
+                            <tr>
+                                <th class="ps-3" style="width: 120px;">Abertura</th>
+                                <th>Tipo</th>
+                                <th>Ativo / Local</th>
+                                <th>Solicitante</th>
+                                <th>Descrição Detalhada</th>
+                                <th style="width: 110px;">Prioridade</th>
+                                <th class="text-center" style="width: 90px;">Ação</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-dark">
+                            {% for chamado in chamados_novos %}
+                            <tr>
+                                <td class="ps-3"><small class="text-muted" style="font-family: monospace;">{{ chamado.criado_em|date:"d/m/Y H:i" }}</small></td>
+                                <td>
+                                    <span class="fw-semibold text-dark d-inline-flex align-items-center">
+                                        {% if chamado.tipo == 'equipamento' %}
+                                            <i class="fas fa-laptop text-muted me-1" style="font-size: 0.85rem; line-height:0"></i>#{{ chamado.id }} - Equipamento
+                                        {% elif chamado.tipo == 'duvidas' %}
+                                            <i class="fas fa-question-circle text-muted me-1" style="font-size: 0.85rem; line-height:0"></i>#{{ chamado.id }} - Dúvida / Suporte
+                                        {% else %}
+                                            <i class="fa-solid fa-code text-muted me-1" style="font-size: 0.85rem; line-height:0"></i>#{{ chamado.id }} - Sistema
+                                        {% endif %}
+                                    </span>
+                                </td>
+                                    
+                                <td>
+                                    <span class="fw-semibold text-dark">
+                                        {% if chamado.equipamento %}
+                                            {# Se tiver equipamento, mostra o nome dele e a barra separadora / #}
+                                            {{ chamado.equipamento.nome }}
+                                            <span class="text-muted mx-1">/</span> 
+                                        {% endif %}
+                                        
+                                        {# Mostra o setor em todos os casos #}
+                                        {{ chamado.setor.nome }}
+                                    </span>
+                                </td>  
+                                <td><span class="fw-semibold">{{ chamado.solicitante.get_full_name|default:chamado.solicitante.username }}</span></td>
+                                <td style="cursor: pointer; max-width: 300px;" 
+                                    onclick="abrirDescricao('{{ chamado.id }}', '{{ chamado.descricao|escapejs }}', '{{ chamado.solicitante.get_full_name|default:chamado.solicitante.username|escapejs }}', '{{ chamado.subcategoria_duvida|default:''|escapejs }}')">
+                                    <span class="text-secondary text-truncate d-block" style="font-size: 0.85rem;">
+                                        {{ chamado.descricao|truncatewords:8 }}
+                                        {% if chamado.descricao|length > 40 %}
+                                            <i class="fas fa-expand-alt text-primary ms-1 opacity-50" style="font-size: 0.7rem;"></i>
+                                        {% endif %}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge px-2 py-1 rounded fw-bold text-uppercase" style="font-size: 0.65rem;
+                                        {% if chamado.prioridade == 1 %} background-color: #fee2e2; color: #991b1b;
+                                        {% elif chamado.prioridade == 2 %} background-color: #fef3c7; color: #92400e;
+                                        {% else %} background-color: #f1f5f9; color: #475569; {% endif %}">
+                                        {{ chamado.get_prioridade_display }}
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <button type="button" class="btn btn-light border btn-sm text-primary shadow-sm" style="border-radius: 6px;" data-bs-toggle="modal" data-bs-target="#modalDesignar{{ chamado.id }}" title="Designar Equipe">
+                                        <i class="fas fa-user-plus"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-5 text-muted">
+                    <i class="fas fa-check-circle fa-2x mb-2 text-success opacity-25"></i>
+                    <p class="mb-0 small fw-semibold">Fila zerada! Sem chamados pendentes de distribuição.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm" style="border-radius: 12px;">
+        <div class="card-header border-0 bg-light p-3 d-flex justify-content-between align-items-center" style="border-radius: 12px 12px 0 0; border-left: 4px solid #2563eb !important;">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-tools text-primary me-2"></i>
+                <span class="fw-bold text-dark m-0" style="font-size: 0.95rem;">Monitoramento Ativo <small class="text-muted fw-normal">(Últimos 10)</small></span>
+            </div>
+            <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-10 fw-semibold px-2.5 py-1">
+                Total Ativos: {{ total_andamento }}
+            </span>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" style="font-size: 0.88rem;">
+                    <thead class="table-light text-secondary" style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px;">
+                        <tr>
+                            <th class="ps-3" style="width: 80px;">OS</th>
+                            <th>Ativo Operacional</th>
+                            <th>Equipe Alocada</th>
+                            <th style="width: 130px;">Status Técnico</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-dark">
+                        {% for chamado in chamados_em_andamento %}
+                        <tr>
+                            <td class="ps-3 text-muted fw-bold" style="font-family: monospace;">#{{ chamado.id }}</td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    {% if chamado.tipo == 'equipamento' %}
+                                        <i class="fas fa-laptop text-muted me-2" style="font-size: 0.85rem; line-height: 0;"></i> <strong>#{{ chamado.id }} - Equipamento</strong>
+                                    {% elif chamado.tipo == 'duvidas' %}
+                                        <i class="fas fa-question-circle text-muted me-2" style="font-size: 0.85rem; line-height: 0;"></i> <strong>#{{ chamado.id }} - Dúvida / Suporte</strong>
+                                    {% else %}
+                                        <i class="fas fa-code text-muted me-2" style="font-size: 0.85rem; line-height: 0;"></i> <strong>#{{ chamado.id }} - Sistema</strong>
+                                    {% endif %}
+                                </div>
+                                <small class="text-muted ms-3" style="font-size: 0.78rem;">{{ chamado.nome_setor }}</small>
+                            </td>
+                            <td>
+                                <div class="d-flex flex-wrap gap-1">
+                                    {% for agente in chamado.agentes.all %}
+                                        <span class="badge bg-light text-secondary border fw-semibold px-2 py-1" style="font-size: 0.75rem; border-radius: 4px;">{{ agente.username }}</span>
+                                    {% empty %}
+                                        <span class="text-warning small fw-semibold"><i class="fas fa-user-exclamation me-1"></i>Aguardando Técnico</span>
+                                    {% endfor %}
+                                </div>
+                            </td>
+                            <td>
+                                {% if chamado.status == 'concluido' %}
+                                    <span class="badge bg-success bg-opacity-10 text-success fw-semibold border border-success border-opacity-10 rounded-pill px-2.5 py-1" style="font-size: 0.72rem;">
+                                        <i class="fas fa-check-circle me-1" style="font-size: 0.65rem;"></i> {{ chamado.get_status_display }}
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-info bg-opacity-10 text-info fw-semibold border border-info border-opacity-10 rounded-pill px-2.5 py-1" style="font-size: 0.72rem;">
+                                        <i class="fas fa-spinner fa-spin me-1" style="font-size: 0.65rem;"></i> {{ chamado.get_status_display }}
+                                    </span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center py-4 text-muted">
+                                <span class="small fw-semibold">Nenhuma equipe em campo no momento.</span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% if total_andamento > 10 %}
+            <div class="text-center p-3 border-top border-light">
+                <a href="{% url 'historicos' %}" class="btn btn-sm btn-link text-decoration-none text-primary fw-bold" style="font-size: 0.82rem;">
+                    <i class="fas fa-plus-circle me-1"></i> Visualizar todos os {{ total_andamento }} serviços ativos
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% for chamado in chamados_novos %}
+<div class="modal fade" id="modalDesignar{{ chamado.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <form action="{% url 'atribuir_chamado' chamado.id %}" method="post">
+                {% csrf_token %}
+                <div class="modal-header border-0 bg-light p-3">
+                    <h6 class="modal-title fw-bold text-dark"><i class="fas fa-user-check text-primary me-2"></i>Designar OS #{{ chamado.id }}</h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="font-size: 0.8rem;"></button>
+                </div>
+                <div class="modal-body p-4 text-start text-dark">
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold text-muted text-uppercase mb-1" style="letter-spacing: 0.5px;">Definir Prioridade Técnica</label>
+                        <select name="prioridade" class="form-select border-light bg-light" style="border-radius: 8px;">
+                            <option value="1" {% if chamado.prioridade == 1 %}selected{% endif %}>Alta Criticidade</option>
+                            <option value="2" {% if chamado.prioridade == 2 %}selected{% endif %}>Média Criticidade</option>
+                            <option value="3" {% if chamado.prioridade == 3 %}selected{% endif %}>Baixa Criticidade</option>
+                        </select>
+                    </div>
+                    
+                    <label class="form-label small fw-bold text-muted text-uppercase mb-1" style="letter-spacing: 0.5px;">Atribuir Responsáveis</label>
+                    <div class="card border-0 bg-light p-3 shadow-inner" style="border-radius: 8px; max-height: 220px; overflow-y: auto;">
+                        <div class="form-check mb-2 pb-2 border-bottom border-black-50 border-opacity-10">
+                            <input class="form-check-input select-all" type="checkbox" id="all{{ chamado.id }}" data-chamado="{{ chamado.id }}" checked>
+                            <label class="form-check-label fw-bold text-primary" style="cursor: pointer;" for="all{{ chamado.id }}">Selecionar Todos</label>
+                        </div>
+                        
+                        <div class="d-flex flex-column gap-2">
+                            {% for agente in agentes %}
+                            <div class="form-check">
+                                <input class="form-check-input agente-check-{{ chamado.id }}" type="checkbox" name="agentes" value="{{ agente.id }}" id="a{{ chamado.id }}{{ agente.id }}" checked>
+                                <label class="form-check-label" style="cursor: pointer;" for="a{{ chamado.id }}{{ agente.id }}">
+                                    {{ agente.get_full_name|default:agente.username }}
+                                </label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 p-3 bg-light bg-opacity-50">
+                    <button type="button" class="btn btn-light fw-semibold" style="border-radius: 8px; font-size: 0.88rem;" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary fw-semibold" style="border-radius: 8px; font-size: 0.88rem;">Confirmar Ordem</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<div class="modal fade" id="modalDescricaoGeral" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow" style="border-radius: 12px;">           
+            <div class="modal-header border-0 bg-light p-3" style="border-radius: 12px 12px 0 0;">
+                <h6 class="modal-title fw-bold text-dark" id="modalDescricaoTitulo">Escopo do Registro</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="font-size: 0.8rem;"></button>
+            </div>
+            <div class="modal-body text-dark p-4">
+
+                <div class="bloco-assunto mb-3" style="display:none;">
+                    <div class="small fw-bold text-muted text-uppercase mb-1" style="letter-spacing: 0.5px;">
+                        Assunto
+                    </div>
+                    <div id="modalDescricaoAssunto" class="fw-semibold text-dark" style="font-size: 0.95rem;"></div>
+                </div>
+                <p id="modalDescricaoTexto" class="text-secondary" style="white-space: pre-wrap; font-size: 0.92rem; line-height: 1.5;"></p>
+                <div class="mt-3 pt-3 border-top border-light d-flex align-items-center">
+                    <div class="bg-secondary bg-opacity-10 text-secondary rounded-circle px-2 py-1.5 me-2" style="font-size: 0.8rem;">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <small class="text-muted">Aberto por: <span id="modalDescricaoAutor" class="text-dark fw-semibold"></span></small>
+                </div>
+            </div>
+            <div class="modal-footer border-0 p-3">
+                <button type="button" class="btn btn-secondary w-100 fw-semibold" data-bs-dismiss="modal" style="border-radius: 8px; font-size: 0.88rem;">Fechar Janela</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Gerenciamento de Checkboxes Globais nos Modais de Designação
+document.querySelectorAll('.select-all').forEach(masterCheck => {
+    masterCheck.addEventListener('change', function() {
+        const id = this.getAttribute('data-chamado');
+        const children = document.querySelectorAll('.agente-check-' + id);
+        children.forEach(child => child.checked = this.checked);
+    });
+});
+
+// Abertura Dinâmica de Escopo
+function abrirDescricao(id, texto, autor, assunto) {
+    document.getElementById('modalDescricaoTitulo').innerHTML = '<i class="fas fa-info-circle text-primary me-2"></i>Detalhamento do Chamado #' + id;
+    document.getElementById('modalDescricaoTexto').innerText = texto;
+    document.getElementById('modalDescricaoAutor').innerText = autor;
+    
+    const elAssunto = document.getElementById('modalDescricaoAssunto');
+    if (assunto) {
+        elAssunto.innerText = assunto;
+        elAssunto.closest('.bloco-assunto').style.display = 'block';
+    } else {
+        elAssunto.closest('.bloco-assunto').style.display = 'none';
+    }
+
+    var myModal = new bootstrap.Modal(document.getElementById('modalDescricaoGeral'));
+    myModal.show();
+}
+</script>
+{% endblock %}

@@ -1,0 +1,483 @@
+{% extends 'chamados_ti/base.html' %}
+
+{% block content %}
+<div class="row animate__animated animate__fadeIn">
+    <div class="col-lg-8 mx-auto">
+        <div class="mb-4">
+            <h3 class="fw-bold m-0 text-dark" style="letter-spacing: -0.5px;">
+                <i class="fas fa-plus-circle me-2 text-primary"></i>Novo Chamado
+            </h3>
+            <p class="text-muted small m-0">Abra solicitações de manutenção ou envie dúvidas operacionais para o setor responsável.</p>
+        </div>
+
+        <div class="card border-0 shadow-sm" style="border-radius: 12px;">
+            <div class="card-body p-4 text-dark">
+                
+                <form method="post" enctype="multipart/form-data" id="formChamado">
+                    {% csrf_token %}
+                    
+                    {# ── Setor (sempre visível, independente do tipo) ───────────────────── #}
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted text-uppercase" style="letter-spacing: 0.5px;">Setor</label>
+                        <div class="form-control-container">
+                            <select id="select_setor" name="setor_selecionado" class="form-select bg-light border-0 py-2" style="border-radius: 8px; font-size: 0.9rem;" required>
+                                <option value="">— Selecione o setor —</option>
+                                {% for setor in setores %}
+                                    <option value="{{ setor.id }}">{{ setor.nome }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    {# ── Tipo do chamado ─────────────────────────────────────────────────── #}
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted text-uppercase" style="letter-spacing: 0.5px;">Tipo do Chamado</label>
+                        <div class="form-control-container select-wrapper">
+                            {{ form.tipo }}
+                        </div>
+                    </div>
+                    
+                    {# ── Bloco: Equipamento (aparece só quando tipo = 'equipamento') ──────── #}
+                    <div id="bloco_equipamento" class="d-none">
+
+                        {# Aviso de setor sem equipamentos cadastrados #}
+                        <div class="mb-3" id="bloco_sem_equipamentos" style="display:none;">
+                            <div class="alert alert-warning small mb-0 d-flex align-items-center gap-2" style="border-radius: 8px; font-size: 0.85rem;">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <span>Nenhum equipamento cadastrado neste setor.</span>
+                            </div>
+                        </div>
+
+                        <div class="mb-3" id="bloco_categoria" style="display:none;">
+                            <label class="form-label small fw-bold text-muted text-uppercase mb-2" style="letter-spacing: 0.5px;">Categoria</label>
+                            <div class="d-flex flex-wrap gap-2" id="categoria_buttons">
+                                {# Botões gerados pelo JS após o fetch #}
+                            </div>
+                        </div>
+
+                        <div class="mb-3" id="bloco_select_equip" style="display:none;">
+                            <label class="form-label small fw-bold text-muted text-uppercase" style="letter-spacing: 0.5px;">Equipamento</label>
+                            <div class="form-control-container select-wrapper">
+                                {{ form.equipamento }}
+                            </div>
+                            {% if form.equipamento.errors %}
+                                <div class="text-danger small mt-1 fw-semibold"><i class="fas fa-exclamation-circle me-1"></i>{{ form.equipamento.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                    </div>
+
+                    {# ── Bloco: Dúvida e Sistema (aparece quando tipo = 'duvidas' ou 'sistema') ── #}
+                    <div id="bloco_assunto" class="d-none">
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-muted text-uppercase" 
+                                id="label_assunto"
+                                style="letter-spacing: 0.5px;">Assunto do Chamado</label>
+                            <div class="form-control-container select-wrapper">
+                                {{ form.subcategoria_duvida }}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {# ── Descrição e prioridade (sempre visíveis) ────────────────────────── #}
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted text-uppercase" style="letter-spacing: 0.5px;">Descrição</label>
+                        <div class="form-control-container">
+                            {{ form.descricao }}
+                        </div>
+                        {% if form.descricao.errors %}
+                            <div class="text-danger small mt-1 fw-semibold"><i class="fas fa-exclamation-circle me-1"></i>{{ form.descricao.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3" id="div-imagens">
+                        <label class="form-label small fw-bold text-muted text-uppercase mb-1" style="letter-spacing: 0.5px;">
+                            <i class="fas fa-camera me-1 opacity-75"></i>Imagens do Problema (Máximo 5)
+                        </label>
+                        
+                        <div id="container-inputs-imagens" class="mt-2">
+                            </div>
+
+                        <button type="button" id="btn-add-imagem" class="btn btn-outline-primary fw-semibold btn-sm mt-1" style="border-radius: 6px; font-size: 0.8rem;">
+                            <i class="fas fa-plus me-1"></i>Adicionar outra imagem
+                        </button>
+                    </div>
+                    
+
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold text-muted text-uppercase" style="letter-spacing: 0.5px;">Prioridade</label>
+                        <div class="form-control-container select-wrapper">
+                            {{ form.prioridade }}
+                        </div>
+                    </div>
+                    
+                    <hr class="text-muted opacity-25 my-4">
+
+                    <div class="row g-2">
+                        <div class="col-md-8">
+                            <button type="submit" class="btn btn-primary w-100 fw-semibold py-2.5" style="border-radius: 8px; font-size: 0.9rem;">
+                                <i class="fas fa-paper-plane me-2"></i>Enviar Chamado
+                            </button>
+                        </div>
+                        <div class="col-md-4">
+                            {% if user.tipo == 'mecanico_admin' %}
+                                <a href="{% url 'dashboard_admin_manutencao' %}" class="btn btn-light border w-100 text-muted fw-semibold py-2.5 small" style="border-radius: 8px; font-size: 0.9rem;">Cancelar</a>
+                            {% else %}
+                                <a href="{% url 'solicitante_dashboard' %}" class="btn btn-light border w-100 text-muted fw-semibold py-2.5 small" style="border-radius: 8px; font-size: 0.9rem;">Cancelar</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    // ── Referências dos elementos novos ───────────────────────────────────
+    const selectTipo       = document.getElementById('id_tipo');
+    const blocoEquipamento = document.getElementById('bloco_equipamento');
+    const blocoAssunto   = document.getElementById('bloco_assunto');
+    const labelAssunto   = document.getElementById('label_assunto');
+    const selectSetor      = document.getElementById('select_setor');
+    const blocoCategoria   = document.getElementById('bloco_categoria');
+    const categoriaButtons = document.getElementById('categoria_buttons');
+    const blocoSelectEquip = document.getElementById('bloco_select_equip');
+    const selectEquipDjango = document.getElementById('id_equipamento');
+    const blocoSemEquipamentos = document.getElementById('bloco_sem_equipamentos'); 
+
+
+    // Estado local
+    let dadosDoSetor = {};        
+    let categoriaAtiva = 'TODAS';
+    let setorTemEquipamentos = null;
+
+    // Injeta classes nos componentes estruturados do Django Forms automaticamente
+    const inputsDjango = document.querySelectorAll('#formChamado input:not([type="radio"]):not([type="hidden"]), #formChamado textarea, #formChamado select');
+    inputsDjango.forEach(input => {
+        if (!input.classList.contains('form-control') && !input.classList.contains('form-select')) {
+            input.classList.add(input.tagName === 'SELECT' ? 'form-select' : 'form-control');
+        }
+    });
+
+    // ── Mostra/esconde blocos conforme o tipo selecionado ────────────────
+    function aplicarVisibilidadeTipo() {
+        const tipo = selectTipo.value;
+
+        blocoEquipamento.classList.toggle('d-none', tipo !== 'equipamento');
+        blocoAssunto.classList.toggle('d-none', tipo !== 'duvidas' && tipo !== 'sistema');
+
+        // Troca o label conforme o tipo
+        if (tipo === 'duvidas') {
+            labelAssunto.textContent = 'Assunto da Dúvida';
+        } else if (tipo === 'sistema') {
+            labelAssunto.textContent = 'Assunto do Chamado';
+        }
+
+        if (tipo === 'equipamento') {
+            atualizarVisibilidadeInternaEquipamento();
+        }
+    }
+
+    selectTipo.addEventListener('change', function () {
+        aplicarVisibilidadeTipo();
+    });
+
+    aplicarVisibilidadeTipo();
+
+    // ── decide o que mostrar DENTRO do bloco equipamento ────────────
+    function atualizarVisibilidadeInternaEquipamento() {
+        if (setorTemEquipamentos === null) {
+            blocoSemEquipamentos.style.display = 'none';
+            blocoCategoria.style.display = 'none';
+            blocoSelectEquip.style.display = 'none';
+            return;
+        }
+
+        if (setorTemEquipamentos === false) {
+            blocoSemEquipamentos.style.display = 'block';
+            blocoCategoria.style.display = 'none';
+            blocoSelectEquip.style.display = 'none';
+            return;
+        }
+
+        blocoSemEquipamentos.style.display = 'none';
+        blocoCategoria.style.display = 'block';
+        blocoSelectEquip.style.display = 'block';
+    }
+
+
+    // ── Busca equipamentos do setor via API ──────────────────────────────
+    function carregarEquipamentosDoSetor(setorId) {
+        categoriaButtons.innerHTML = '';
+        limparSelectEquipamento();
+        setorTemEquipamentos = null;                  // ← NOVO
+        atualizarVisibilidadeInternaEquipamento();    // ← NOVO (substitui as 2 linhas de style.display antigas)
+
+        if (!setorId) return;
+
+        fetch(`/api/equipamentos-do-setor/${setorId}/`)
+            .then(r => r.json())
+            .then(dados => {
+                dadosDoSetor = dados;
+                setorTemEquipamentos = Object.keys(dados).length > 0; // ← NOVO
+
+                if (!setorTemEquipamentos) {
+                    atualizarVisibilidadeInternaEquipamento();        // ← NOVO (substitui o innerHTML de aviso antigo)
+                    return;
+                }
+
+                const btnTodas = criarBotaoCategoria('TODAS', 'Todas', true);
+                categoriaButtons.appendChild(btnTodas);
+
+                for (const catLabel of Object.keys(dados)) {
+                    categoriaButtons.appendChild(criarBotaoCategoria(catLabel, catLabel, false));
+                }
+
+                categoriaAtiva = 'TODAS';
+                popularSelectEquipamento();
+                atualizarVisibilidadeInternaEquipamento(); // ← NOVO (substitui as 2 linhas de style.display antigas)
+            })
+            .catch(() => {
+                categoriaButtons.innerHTML = '<span class="text-danger small">Erro ao carregar equipamentos.</span>';
+                setorTemEquipamentos = true;                // ← NOVO: força exibir o bloco categoria (com a msg de erro dentro)
+                atualizarVisibilidadeInternaEquipamento();  // ← NOVO
+            });
+    }
+
+    // ── Cria botão de categoria adaptado à nova identidade ───────────────
+    function criarBotaoCategoria(valor, label, ativo) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `btn btn-sm fw-medium transition-all ${ativo ? 'btn-primary' : 'btn-outline-secondary border-light-subtle bg-light text-secondary'}`;
+        btn.style.cssText = 'font-size: 0.75rem; padding: 0.25rem 0.6rem; border-radius: 6px;';
+        btn.dataset.cat = valor;
+        btn.textContent = label;
+
+        btn.addEventListener('click', function () {
+            document.querySelectorAll('#categoria_buttons .btn').forEach(b => {
+                b.className = 'btn btn-sm fw-medium transition-all btn-outline-secondary border-light-subtle bg-light text-secondary';
+            });
+            btn.className = 'btn btn-sm fw-medium transition-all btn-primary';
+
+            categoriaAtiva = valor;
+            popularSelectEquipamento();
+        });
+
+        return btn;
+    }
+
+    // ── Popula o select real do Django com os equipamentos filtrados ──────
+    function popularSelectEquipamento() {
+        limparSelectEquipamento();
+
+        const categorias = categoriaAtiva === 'TODAS'
+            ? Object.entries(dadosDoSetor)
+            : [[categoriaAtiva, dadosDoSetor[categoriaAtiva] || []]];
+
+        let total = 0;
+        for (const [catLabel, equips] of categorias) {
+            for (const eq of equips) {
+                const opt = document.createElement('option');
+                opt.value = eq.id;
+                opt.textContent = eq.nome;
+                selectEquipDjango.appendChild(opt);
+                total++;
+            }
+        }
+
+        if (total === 0) {
+            const opt = document.createElement('option');
+            opt.disabled = true;
+            opt.textContent = 'Nenhum equipamento nesta categoria...';
+            selectEquipDjango.appendChild(opt);
+        }
+    }
+
+    function limparSelectEquipamento() {
+        selectEquipDjango.innerHTML = '<option value="">— Selecione o equipamento —</option>';
+    }
+
+    function limparSelecaoEquipamento() {
+        limparSelectEquipamento();
+        dadosDoSetor = {};
+        categoriaAtiva = 'TODAS';
+        setorTemEquipamentos = null;              // ← NOVO
+        blocoCategoria.style.display = 'none';
+        blocoSelectEquip.style.display = 'none';
+        blocoSemEquipamentos.style.display = 'none'; // ← NOVO
+    }
+
+    selectSetor.addEventListener('change', function () {
+        carregarEquipamentosDoSetor(this.value);
+    });
+
+    // ── LÓGICA REUTILIZADA: MÚLTIPLAS IMAGENS DINÂMICAS ──────────────────
+    const maxImagens = 5;
+    let containerInputs = document.getElementById('container-inputs-imagens');
+    let btnAdd = document.getElementById('btn-add-imagem');
+
+    function atualizarInterfaceImagens() {
+        const itens = containerInputs.querySelectorAll('.item-imagem');
+        btnAdd.style.display = itens.length >= maxImagens ? 'none' : 'inline-block';
+        itens.forEach(item => {
+            const btnRemover = item.querySelector('.btn-remover');
+            btnRemover.style.display = itens.length > 1 ? 'block' : 'none';
+        });
+    }
+
+    function criarNovoInputImagem() {
+        if (containerInputs.querySelectorAll('.item-imagem').length >= maxImagens) return;
+
+        const div = document.createElement('div');
+        div.className = 'item-imagem mb-3 animate__animated animate__fadeInUp animate__faster';
+        div.innerHTML = `
+            <div class="input-group shadow-xs" style="border-radius: 8px; overflow: hidden;">
+                <input type="file" name="imagens" class="form-control border-light-subtle bg-light input-foto py-2" accept="image/*" capture="environment" style="font-size: 0.85rem;">
+                <button type="button" class="btn btn-outline-danger btn-remover px-3" style="border-color: #e2e8f0;">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
+            </div>
+            <div class="preview-individual mt-2" style="display:none;">
+                <div class="d-inline-block position-relative bg-white p-1 rounded border shadow-sm">
+                    <img src="" class="rounded" style="height: 90px; width: 120px; object-fit: cover;">
+                </div>
+            </div>
+        `;
+
+        const input = div.querySelector('.input-foto');
+        input.addEventListener('change', function() {
+            const previewDiv = div.querySelector('.preview-individual');
+            const img = previewDiv.querySelector('img');
+            if (this.files && this.files[0]) {
+                const url = URL.createObjectURL(this.files[0]);
+                img.src = url;
+                previewDiv.style.display = 'block';
+                img.onload = () => URL.revokeObjectURL(url);
+            }
+        });
+
+        div.querySelector('.btn-remover').addEventListener('click', function() {
+            div.remove();
+            atualizarInterfaceImagens();
+        });
+
+        containerInputs.appendChild(div);
+        atualizarInterfaceImagens();
+    }
+
+    btnAdd.onclick = criarNovoInputImagem;
+
+    if (containerInputs.querySelectorAll('.item-imagem').length === 0) {
+        criarNovoInputImagem();
+    }
+
+    // ── LÓGICA DE CAPTURA DE PRINT POR CTRL+V ───────────────────────────
+    window.addEventListener('paste', function (e) {
+        // Pega os itens da área de transferência
+        const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+        
+        for (const item of items) {
+            // Verifica se o elemento colado é de fato uma imagem
+            if (item.kind === 'file' && item.type.startsWith('image/')) {
+                const blob = item.getAsFile();
+                
+                // Cria o arquivo virtual simulando o upload manual
+                const timestamp = new Date().getTime();
+                const arquivoColado = new File([blob], `print_${timestamp}.png`, { type: blob.type });
+
+                // Procura por todos os blocos de imagem ativos na tela
+                let itensImagem = containerInputs.querySelectorAll('.item-imagem');
+                let inputDestino = null;
+
+                // Tenta achar o primeiro input que ainda não tenha nenhum arquivo selecionado
+                for (const itemImg of itensImagem) {
+                    const inputFoto = itemImg.querySelector('.input-foto');
+                    if (!inputFoto.files || inputFoto.files.length === 0) {
+                        inputDestino = inputFoto;
+                        break;
+                    }
+                }
+
+                // Se não achou nenhum input vazio, mas ainda não atingiu o limite de 5, cria um novo campo!
+                if (!inputDestino && itensImagem.length < maxImagens) {
+                    criarNovoInputImagem();
+                    // Atualiza a lista de itens para pegar o que acabou de ser criado
+                    itensImagem = containerInputs.querySelectorAll('.item-imagem');
+                    inputDestino = itensImagem[itensImagem.length - 1].querySelector('.input-foto');
+                }
+
+                // Se temos um input de destino válido, injetamos a imagem colada nele
+                if (inputDestino) {
+                    const dataTransfer = new DataTransfer();
+                    dataTransfer.items.add(arquivoColado);
+                    inputDestino.files = dataTransfer.files;
+
+                    // Dispara manualmente o evento 'change' para o seu script gerar o preview da imagem na tela
+                    inputDestino.dispatchEvent(new Event('change'));
+                } else {
+                    alert('Limite máximo de 5 imagens atingido!');
+                }
+                
+                break; // Processou a imagem, pode parar o laço
+            }
+        }
+    });
+
+    // ── LÓGICA REUTILIZADA: BLOQUEIO DE CLIQUES DUPLOS ───────────────────
+    const form = document.getElementById('formChamado');
+    const btnSubmit = form.querySelector('button[type="submit"]');
+
+    form.addEventListener('submit', function() {
+        btnSubmit.disabled = true;
+        btnSubmit.innerHTML = `
+            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+            Enviando Chamado...
+        `;
+    });
+
+    
+});
+</script>
+
+<style>
+    /* Estilização Base Unificada */
+    .form-control-container input, 
+    .form-control-container textarea,
+    .form-control-container select {
+        display: block;
+        width: 100%;
+        padding: 0.55rem 0.75rem;
+        font-size: 0.9rem;
+        color: #334155;
+        background-color: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        transition: border-color .15s ease-in-out, box-shadow .15s ease-in-out;
+    }
+    .form-control-container input:focus, 
+    .form-control-container textarea:focus,
+    .form-control-container select:focus {
+        color: #1e293b;
+        background-color: #fff;
+        border-color: #3b82f6;
+        outline: 0;
+        box-shadow: 0 0 0 0.25rem rgba(59, 130, 246, .1);
+    }
+    .custom-radio input[type="radio"] {
+        cursor: pointer;
+        accent-color: #dc3545;
+        transform: scale(1.1);
+    }
+    .shadow-xs {
+        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    }
+    .transition-all {
+        transition: all 0.15s ease-in-out;
+    }
+</style>
+{% endblock %}

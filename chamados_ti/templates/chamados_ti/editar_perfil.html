@@ -1,0 +1,41 @@
+{% extends "chamados_ti/base.html" %}
+
+{% block content %}
+<div class="row justify-content-center align-items-center" style="min-height: 75vh;">
+    <div class="col-md-5">
+        <div class="card p-4 shadow-sm animate__animated animate__fadeIn">
+            <div class="text-center mb-4">
+                <div class="user-avatar-circle mx-auto mb-3" style="width: 60px; height: 60px; font-size: 1.5rem;">
+                    {{ user.username|slice:":1"|upper }}
+                </div>
+                <h4 class="fw-bold text-dark">Meu Perfil</h4>
+                <p class="text-muted small">Atualize suas informações de cadastro</p>
+            </div>
+
+            <form method="POST">
+                {% csrf_token %}
+                
+                {% for field in form %}
+                    <div class="mb-3 text-start">
+                        <label class="form-label fw-semibold text-secondary small" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        <input type="{{ field.field.widget.input_type }}" 
+                               name="{{ field.html_name }}" 
+                               id="{{ field.id_for_label }}"
+                               value="{{ field.value|default_if_none:'' }}"
+                               class="form-control {% if field.errors %}is-invalid{% endif %}"
+                               required>
+                        {% for error in field.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+
+                <div class="d-flex gap-2 mt-4">
+                    <a href="{% url 'dashboard' %}" class="btn btn-light w-50 border">Cancelar</a>
+                    <button type="submit" class="btn btn-primary w-50">Salvar Alterações</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
