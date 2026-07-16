@@ -587,10 +587,6 @@ def historicos(request):
             Q(email__icontains=q)
         )
 
-    # Se a TI filtrou por status, removemos da lista usuários que não possuem atividade nesse status
-    if status_filtro:
-        usuarios = usuarios.filter(ultima_atividade__isnull=False)
-
     # APLICAÇÃO DA ORDENAÇÃO SELECIONADA
     hoje = timezone.now().date()
     if ordenar == 'abertos_primeiro':
@@ -611,9 +607,17 @@ def historicos(request):
         # Ordenação padrão: Atividade mais recente primeiro
         usuarios = usuarios.order_by(F('ultima_atividade').desc(nulls_last=True))
 
+    # ================= LOGICA DA PAGINAÇÃO =================
+    itens_por_pagina = 10  # quantidade de usuários por página 
+    paginator = Paginator(usuarios, itens_por_pagina)
+    
+    page_number = request.GET.get('page')
+    usuarios_paginados = paginator.get_page(page_number)
+    # =======================================================
+
 
     # PREENCHIMENTO DO PREVIEW (Captura o último objeto Chamado de cada usuário)
-    for usuario in usuarios:
+    for usuario in usuarios_paginados:
         qs_chamados = Chamado.objects.filter(solicitante=usuario)
         if status_filtro:
             qs_chamados = qs_chamados.filter(status=status_filtro)
@@ -623,9 +627,8 @@ def historicos(request):
 
     # Retorno do Render atualizado com o seu caminho de template original
     return render(request, 'chamados_ti/historicos.html', {
-        'usuarios': usuarios,
+        'usuarios': usuarios_paginados,
         'search_query': q,
-        'status_selecionado': status_filtro,
         'ordenacao_selecionada': ordenar,
     })
 
