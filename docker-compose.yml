@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  # 1. O Banco de Dados
+  db:
+    image: postgres:15-alpine
+    container_name: helpdesk_db
+    restart: always
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+
+  # 2. O seu Sistema Django
+  web:
+    build: .  # <-- Isso diz para o Portainer: "Crie a imagem usando o Dockerfile do Git"
+    container_name: helpdesk_web
+    restart: always
+    ports:
+      - "8088:8000"  # O sistema vai abrir no IP do servidor na porta 8000
+    volumes:
+      - static_data:/app/staticfiles
+    environment:
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DEBUG=${DEBUG}
+    depends_on:
+      - db
+    command: >
+      sh -c "python manage.py migrate --noinput &&
+             python manage.py collectstatic --noinput &&
+             gunicorn config.wsgi:application --bind 0.0.0.0:8000"
+
+volumes:
+  postgres_data:
+  static_data:
