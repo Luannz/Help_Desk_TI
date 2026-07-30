@@ -12,6 +12,22 @@ from django.core.validators import RegexValidator
 import time
 
 class Usuario(AbstractUser):
+    username = models.CharField(
+        'nome de usuário',
+        max_length=150,
+        unique=True,
+        help_text='Obrigatório. Até 150 caracteres. Letras, números e espaços são permitidos.',
+        validators=[
+            RegexValidator(
+                r'^[\w\s@\.\+\-_]+$',
+                'Informe um nome de usuário válido. Pode conter letras, números, espaços e os caracteres @/./+/-/_.'
+            ),
+        ],
+        error_messages={
+            'unique': "Um usuário com este nome já existe.",
+        },
+    )
+
     TIPO_CHOICES = [
         ('solicitante', 'Solicitante'),
         ('agente', 'Agente'),
