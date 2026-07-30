@@ -16,18 +16,30 @@
                 <form method="post" enctype="multipart/form-data" id="formChamado">
                     {% csrf_token %}
                     
-                    {# ── Setor (sempre visível, independente do tipo) ───────────────────── #}
-                    <div class="mb-3">
-                        <label class="form-label small fw-bold text-muted text-uppercase" style="letter-spacing: 0.5px;">Setor</label>
-                        <div class="form-control-container">
-                            <select id="select_setor" name="setor_selecionado" class="form-select bg-light border-0 py-2" style="border-radius: 8px; font-size: 0.9rem;" required>
-                                <option value="">— Selecione o setor —</option>
-                                {% for setor in setores %}
-                                    <option value="{{ setor.id }}">{{ setor.nome }}</option>
-                                {% endfor %}
-                            </select>
+                    {# ── Setor: Inteligente (Fixado ou Select) ───────────────────────────── #}
+                    {% if user.setor %}
+                        {# Se o usuário JÁ TEM setor cadastrado no perfil dele #}
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-muted text-uppercase" style="letter-spacing: 0.5px;">Setor do Solicitante</label>
+                            <input type="text" class="form-control bg-light border-0 py-2 fw-semibold text-dark" value="{{ user.setor.nome }}" readonly style="border-radius: 8px; font-size: 0.9rem;">
+                            
+                            {# O campo oculto envia o ID do setor no submit e é usado pelo JS #}
+                            <input type="hidden" id="select_setor" name="setor_selecionado" value="{{ user.setor.id }}">
                         </div>
-                    </div>
+                    {% else %}
+                        {# Se o usuário NÃO TEM setor, mantém o menu suspenso normal #}
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-muted text-uppercase" style="letter-spacing: 0.5px;">Setor</label>
+                            <div class="form-control-container">
+                                <select id="select_setor" name="setor_selecionado" class="form-select bg-light border-0 py-2" style="border-radius: 8px; font-size: 0.9rem;" required>
+                                    <option value="">— Selecione o setor —</option>
+                                    {% for setor in setores %}
+                                        <option value="{{ setor.id }}">{{ setor.nome }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    {% endif %}
 
                     {# ── Tipo do chamado ─────────────────────────────────────────────────── #}
                     <div class="mb-3">
@@ -67,7 +79,7 @@
 
                     </div>
 
-                    {# ── Bloco: Dúvida e Sistema (aparece quando tipo = 'duvidas' ou 'sistema') ── #}
+                    {# ── Bloco: Dúvida e Sistema ─────────────────────────────────────────── #}
                     <div id="bloco_assunto" class="d-none">
                         <div class="mb-3">
                             <label class="form-label small fw-bold text-muted text-uppercase" 
@@ -79,7 +91,7 @@
                         </div>
                     </div>
                     
-                    {# ── Descrição e prioridade (sempre visíveis) ────────────────────────── #}
+                    {# ── Descrição e prioridade ───────────────────────────────────────────── #}
                     <div class="mb-3">
                         <label class="form-label small fw-bold text-muted text-uppercase" style="letter-spacing: 0.5px;">Descrição</label>
                         <div class="form-control-container">
@@ -95,14 +107,12 @@
                             <i class="fas fa-camera me-1 opacity-75"></i>Imagens do Problema (Máximo 5)
                         </label>
                         
-                        <div id="container-inputs-imagens" class="mt-2">
-                            </div>
+                        <div id="container-inputs-imagens" class="mt-2"></div>
 
                         <button type="button" id="btn-add-imagem" class="btn btn-outline-primary fw-semibold btn-sm mt-1" style="border-radius: 6px; font-size: 0.8rem;">
                             <i class="fas fa-plus me-1"></i>Adicionar outra imagem
                         </button>
                     </div>
-                    
 
                     <div class="mb-4">
                         <label class="form-label small fw-bold text-muted text-uppercase" style="letter-spacing: 0.5px;">Prioridade</label>
@@ -138,11 +148,11 @@
 <script>
 document.addEventListener('DOMContentLoaded', function () {
 
-    // ── Referências dos elementos novos ───────────────────────────────────
+    // ── Referências dos elementos ──────────────────────────────────────────
     const selectTipo       = document.getElementById('id_tipo');
     const blocoEquipamento = document.getElementById('bloco_equipamento');
-    const blocoAssunto   = document.getElementById('bloco_assunto');
-    const labelAssunto   = document.getElementById('label_assunto');
+    const blocoAssunto     = document.getElementById('bloco_assunto');
+    const labelAssunto     = document.getElementById('label_assunto');
     const selectSetor      = document.getElementById('select_setor');
     const blocoCategoria   = document.getElementById('bloco_categoria');
     const categoriaButtons = document.getElementById('categoria_buttons');
@@ -150,13 +160,12 @@ document.addEventListener('DOMContentLoaded', function () {
     const selectEquipDjango = document.getElementById('id_equipamento');
     const blocoSemEquipamentos = document.getElementById('bloco_sem_equipamentos'); 
 
-
     // Estado local
     let dadosDoSetor = {};        
     let categoriaAtiva = 'TODAS';
     let setorTemEquipamentos = null;
 
-    // Injeta classes nos componentes estruturados do Django Forms automaticamente
+    // Injeta classes do Bootstrap nos campos Django
     const inputsDjango = document.querySelectorAll('#formChamado input:not([type="radio"]):not([type="hidden"]), #formChamado textarea, #formChamado select');
     inputsDjango.forEach(input => {
         if (!input.classList.contains('form-control') && !input.classList.contains('form-select')) {
@@ -171,7 +180,6 @@ document.addEventListener('DOMContentLoaded', function () {
         blocoEquipamento.classList.toggle('d-none', tipo !== 'equipamento');
         blocoAssunto.classList.toggle('d-none', tipo !== 'duvidas' && tipo !== 'sistema');
 
-        // Troca o label conforme o tipo
         if (tipo === 'duvidas') {
             labelAssunto.textContent = 'Assunto da Dúvida';
         } else if (tipo === 'sistema') {
@@ -189,7 +197,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     aplicarVisibilidadeTipo();
 
-    // ── decide o que mostrar DENTRO do bloco equipamento ────────────
+    // ── Decide o que mostrar DENTRO do bloco equipamento ────────────
     function atualizarVisibilidadeInternaEquipamento() {
         if (setorTemEquipamentos === null) {
             blocoSemEquipamentos.style.display = 'none';
@@ -210,13 +218,12 @@ document.addEventListener('DOMContentLoaded', function () {
         blocoSelectEquip.style.display = 'block';
     }
 
-
     // ── Busca equipamentos do setor via API ──────────────────────────────
     function carregarEquipamentosDoSetor(setorId) {
         categoriaButtons.innerHTML = '';
         limparSelectEquipamento();
-        setorTemEquipamentos = null;                  // ← NOVO
-        atualizarVisibilidadeInternaEquipamento();    // ← NOVO (substitui as 2 linhas de style.display antigas)
+        setorTemEquipamentos = null;
+        atualizarVisibilidadeInternaEquipamento();
 
         if (!setorId) return;
 
@@ -224,10 +231,10 @@ document.addEventListener('DOMContentLoaded', function () {
             .then(r => r.json())
             .then(dados => {
                 dadosDoSetor = dados;
-                setorTemEquipamentos = Object.keys(dados).length > 0; // ← NOVO
+                setorTemEquipamentos = Object.keys(dados).length > 0;
 
                 if (!setorTemEquipamentos) {
-                    atualizarVisibilidadeInternaEquipamento();        // ← NOVO (substitui o innerHTML de aviso antigo)
+                    atualizarVisibilidadeInternaEquipamento();
                     return;
                 }
 
@@ -240,16 +247,29 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 categoriaAtiva = 'TODAS';
                 popularSelectEquipamento();
-                atualizarVisibilidadeInternaEquipamento(); // ← NOVO (substitui as 2 linhas de style.display antigas)
+                atualizarVisibilidadeInternaEquipamento();
             })
             .catch(() => {
                 categoriaButtons.innerHTML = '<span class="text-danger small">Erro ao carregar equipamentos.</span>';
-                setorTemEquipamentos = true;                // ← NOVO: força exibir o bloco categoria (com a msg de erro dentro)
-                atualizarVisibilidadeInternaEquipamento();  // ← NOVO
+                setorTemEquipamentos = true;
+                atualizarVisibilidadeInternaEquipamento();
             });
     }
 
-    // ── Cria botão de categoria adaptado à nova identidade ───────────────
+    //  INICIALIZAÇÃO AUTOMÁTICA DO SETOR:
+    // Se o elemento selectSetor existir e já tiver um valor (como o ID do setor do usuário), carrega imediatamente os equipamentos!
+    if (selectSetor && selectSetor.value) {
+        carregarEquipamentosDoSetor(selectSetor.value);
+    }
+
+    // Se o usuário puder trocar o setor pelo <select>, escuta a mudança normalmente:
+    if (selectSetor && selectSetor.tagName === 'SELECT') {
+        selectSetor.addEventListener('change', function () {
+            carregarEquipamentosDoSetor(this.value);
+        });
+    }
+
+    // ── Cria botão de categoria ──────────────────────────────────────────
     function criarBotaoCategoria(valor, label, ativo) {
         const btn = document.createElement('button');
         btn.type = 'button';
@@ -271,7 +291,7 @@ document.addEventListener('DOMContentLoaded', function () {
         return btn;
     }
 
-    // ── Popula o select real do Django com os equipamentos filtrados ──────
+    // ── Popula o select real do Django com os equipamentos ───────────────
     function popularSelectEquipamento() {
         limparSelectEquipamento();
 
@@ -302,21 +322,7 @@ document.addEventListener('DOMContentLoaded', function () {
         selectEquipDjango.innerHTML = '<option value="">— Selecione o equipamento —</option>';
     }
 
-    function limparSelecaoEquipamento() {
-        limparSelectEquipamento();
-        dadosDoSetor = {};
-        categoriaAtiva = 'TODAS';
-        setorTemEquipamentos = null;              // ← NOVO
-        blocoCategoria.style.display = 'none';
-        blocoSelectEquip.style.display = 'none';
-        blocoSemEquipamentos.style.display = 'none'; // ← NOVO
-    }
-
-    selectSetor.addEventListener('change', function () {
-        carregarEquipamentosDoSetor(this.value);
-    });
-
-    // ── LÓGICA REUTILIZADA: MÚLTIPLAS IMAGENS DINÂMICAS ──────────────────
+    // ── Upload Dinâmico de Imagens ───────────────────────────────────────
     const maxImagens = 5;
     let containerInputs = document.getElementById('container-inputs-imagens');
     let btnAdd = document.getElementById('btn-add-imagem');
@@ -376,25 +382,19 @@ document.addEventListener('DOMContentLoaded', function () {
         criarNovoInputImagem();
     }
 
-    // ── LÓGICA DE CAPTURA DE PRINT POR CTRL+V ───────────────────────────
+    // ── Suporte para Print via CTRL+V ────────────────────────────────────
     window.addEventListener('paste', function (e) {
-        // Pega os itens da área de transferência
         const items = (e.clipboardData || e.originalEvent.clipboardData).items;
         
         for (const item of items) {
-            // Verifica se o elemento colado é de fato uma imagem
             if (item.kind === 'file' && item.type.startsWith('image/')) {
                 const blob = item.getAsFile();
-                
-                // Cria o arquivo virtual simulando o upload manual
                 const timestamp = new Date().getTime();
                 const arquivoColado = new File([blob], `print_${timestamp}.png`, { type: blob.type });
 
-                // Procura por todos os blocos de imagem ativos na tela
                 let itensImagem = containerInputs.querySelectorAll('.item-imagem');
                 let inputDestino = null;
 
-                // Tenta achar o primeiro input que ainda não tenha nenhum arquivo selecionado
                 for (const itemImg of itensImagem) {
                     const inputFoto = itemImg.querySelector('.input-foto');
                     if (!inputFoto.files || inputFoto.files.length === 0) {
@@ -403,32 +403,27 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
                 }
 
-                // Se não achou nenhum input vazio, mas ainda não atingiu o limite de 5, cria um novo campo!
                 if (!inputDestino && itensImagem.length < maxImagens) {
                     criarNovoInputImagem();
-                    // Atualiza a lista de itens para pegar o que acabou de ser criado
                     itensImagem = containerInputs.querySelectorAll('.item-imagem');
                     inputDestino = itensImagem[itensImagem.length - 1].querySelector('.input-foto');
                 }
 
-                // Se temos um input de destino válido, injetamos a imagem colada nele
                 if (inputDestino) {
                     const dataTransfer = new DataTransfer();
                     dataTransfer.items.add(arquivoColado);
                     inputDestino.files = dataTransfer.files;
-
-                    // Dispara manualmente o evento 'change' para o seu script gerar o preview da imagem na tela
                     inputDestino.dispatchEvent(new Event('change'));
                 } else {
                     alert('Limite máximo de 5 imagens atingido!');
                 }
                 
-                break; // Processou a imagem, pode parar o laço
+                break;
             }
         }
     });
 
-    // ── LÓGICA REUTILIZADA: BLOQUEIO DE CLIQUES DUPLOS ───────────────────
+    // ── Evita envio duplo no submit ──────────────────────────────────────
     const form = document.getElementById('formChamado');
     const btnSubmit = form.querySelector('button[type="submit"]');
 
@@ -439,45 +434,6 @@ document.addEventListener('DOMContentLoaded', function () {
             Enviando Chamado...
         `;
     });
-
-    
 });
 </script>
-
-<style>
-    /* Estilização Base Unificada */
-    .form-control-container input, 
-    .form-control-container textarea,
-    .form-control-container select {
-        display: block;
-        width: 100%;
-        padding: 0.55rem 0.75rem;
-        font-size: 0.9rem;
-        color: #334155;
-        background-color: #f8fafc;
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        transition: border-color .15s ease-in-out, box-shadow .15s ease-in-out;
-    }
-    .form-control-container input:focus, 
-    .form-control-container textarea:focus,
-    .form-control-container select:focus {
-        color: #1e293b;
-        background-color: #fff;
-        border-color: #3b82f6;
-        outline: 0;
-        box-shadow: 0 0 0 0.25rem rgba(59, 130, 246, .1);
-    }
-    .custom-radio input[type="radio"] {
-        cursor: pointer;
-        accent-color: #dc3545;
-        transform: scale(1.1);
-    }
-    .shadow-xs {
-        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-    }
-    .transition-all {
-        transition: all 0.15s ease-in-out;
-    }
-</style>
 {% endblock %}
