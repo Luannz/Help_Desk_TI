@@ -13,7 +13,21 @@ class RegistroUsuarioForm(UserCreationForm):
 
     class Meta:
         model = Usuario
-        fields = ['username', 'email']
+        fields = ['username', 'email', 'setor']
+        labels = {
+            'setor': 'Setor / Departamento',
+        }
+        widgets = {
+            'setor': forms.Select(attrs={'class': 'form-select'}),  # Estilização do dropdown
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # 1. Torna o campo obrigatório no formulário (Garante validação Python no Backend)
+        self.fields['setor'].required = True
+        
+        # 2. Define o texto inicial neutro
+        self.fields['setor'].empty_label = "Selecione um setor..."
 
 # formulario para o PROPRIO usuario editar seu perfil
 class EditarPerfilForm(forms.ModelForm):
