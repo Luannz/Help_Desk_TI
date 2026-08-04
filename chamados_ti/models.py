@@ -2,7 +2,7 @@
 from django.db import models
 from django.utils import timezone
 from django.contrib.auth.models import AbstractUser
-from PIL import Image, ImageOps
+from PIL import Image, ImageOps, UnidentifiedImageError
 import os
 from io import BytesIO
 from django.core.files.base import ContentFile
@@ -220,51 +220,53 @@ class Chamado(models.Model):
             return f"{segundos}seg"
 
     def save(self, *args, **kwargs):
-    # salva o chamado primeiro
+        # Salva o chamado primeiro
         super().save(*args, **kwargs)
 
-        # Se concluido processa as fotos para economizar espaço
+        # Se concluído, processa apenas as imagens reais para economizar espaço
         if self.status == 'concluido':
             imagens = self.imagens.all()
             
             for img_obj in imagens:
                 if img_obj.imagem:
-                    # 1 Abrir a imagem original
                     img_path = img_obj.imagem.path
                     
-                    # Verifica se o arquivo existe e se ja nao é um .webp (para não processar duas vezes)
+                    # Verifica se o arquivo existe e se já não é um .webp
                     if os.path.exists(img_path) and not img_path.lower().endswith('.webp'):
-                        img = Image.open(img_path)
+                        try:
+                            # 1. Tenta abrir o arquivo como imagem
+                            img = Image.open(img_path)
 
-                        #Girar a foto que vem girada do celular
-                        img = ImageOps.exif_transpose(img)
+                            # Girar a foto que vem girada do celular (EXIF)
+                            img = ImageOps.exif_transpose(img)
 
-                        #aqui ele garante que a imagem seja no modo RGB
-                        if img.mode in ("RGBA", "P"):
-                            img = img.convert("RGB")
+                            # Garante modo RGB (para PNGs transparentes ou GIFs)
+                            if img.mode in ("RGBA", "P"):
+                                img = img.convert("RGB")
 
-                        # 2 Redimensionar (Mantendo a proporção)
-                        # Se a foto for gigante, limita a largura máxima para 800px
-                        max_size = (800, 800)
-                        img.thumbnail(max_size, Image.LANCZOS)
+                            # 2. Redimensionar (Mantendo a proporção)
+                            max_size = (800, 800)
+                            img.thumbnail(max_size, Image.LANCZOS)
 
-                        # 3 Converter para WebP em memória
-                        temp_thumb = BytesIO()
-                        img.save(temp_thumb, format='WEBP', quality=70) # Qualidade 70 
-                        temp_thumb.seek(0)
+                            # 3. Converter para WebP em memória
+                            temp_thumb = BytesIO()
+                            img.save(temp_thumb, format='WEBP', quality=70)
+                            temp_thumb.seek(0)
 
-                        # 4 Atualiza o arquivo no objeto
-                        # Muda a extensão do nome do arquivo
-                        nome_arquivo = os.path.splitext(os.path.basename(img_path))[0] + ".webp"
-                        
-                        # Salva o novo arquivo e deleta o antigo automaticamente
-                        img_obj.imagem.save(nome_arquivo, ContentFile(temp_thumb.read()), save=False)
-                        img_obj.save()
-                        
-                        # 5 Remove o arquivo original antigo  
-                        # mas para garantir espaço em disco imediato):
-                        if os.path.exists(img_path) and not img_path.endswith('.webp'):
-                            os.remove(img_path)
+                            # 4. Atualiza o arquivo no objeto
+                            nome_arquivo = os.path.splitext(os.path.basename(img_path))[0] + ".webp"
+                            
+                            img_obj.imagem.save(nome_arquivo, ContentFile(temp_thumb.read()), save=False)
+                            img_obj.save()
+                            
+                            # 5. Remove o arquivo original antigo
+                            if os.path.exists(img_path) and not img_path.endswith('.webp'):
+                                os.remove(img_path)
+
+                        except (UnidentifiedImageError, OSError, Exception):
+                            # Se não for uma imagem válida (ex: PDF, TXT, etc.),
+                            # ignora a conversão e mantém o arquivo original intacto.
+                            continue
 
 class ImagemChamado(models.Model):
     chamado = models.ForeignKey(Chamado, on_delete=models.CASCADE, related_name='imagens')
