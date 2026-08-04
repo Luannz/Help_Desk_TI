@@ -270,7 +270,8 @@ class Chamado(models.Model):
 
 class ImagemChamado(models.Model):
     chamado = models.ForeignKey(Chamado, on_delete=models.CASCADE, related_name='imagens')
-    imagem = models.ImageField(upload_to='chamados/')
+    # Alterado para FileField para aceitar PDF, DOCX, Imagens, etc.
+    imagem = models.FileField(upload_to='chamados/')
     descricao = models.CharField(max_length=200, blank=True)
     enviado_em = models.DateTimeField(auto_now_add=True)
     
