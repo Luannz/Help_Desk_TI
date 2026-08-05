@@ -104,13 +104,13 @@
                     
                     <div class="mb-3" id="div-imagens">
                         <label class="form-label small fw-bold text-muted text-uppercase mb-1" style="letter-spacing: 0.5px;">
-                            <i class="fas fa-camera me-1 opacity-75"></i>Imagens do Problema (Máximo 5)
+                            <i class="fas fa-paperclip me-1 opacity-75"></i>Anexos do Chamado (Máximo 5)
                         </label>
                         
                         <div id="container-inputs-imagens" class="mt-2"></div>
 
                         <button type="button" id="btn-add-imagem" class="btn btn-outline-primary fw-semibold btn-sm mt-1" style="border-radius: 6px; font-size: 0.8rem;">
-                            <i class="fas fa-plus me-1"></i>Adicionar outra imagem
+                            <i class="fas fa-plus me-1"></i>Adicionar outro anexo
                         </button>
                     </div>
 
@@ -341,29 +341,50 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const div = document.createElement('div');
         div.className = 'item-imagem mb-3 animate__animated animate__fadeInUp animate__faster';
+        
+        // Removido accept="image/*" e capture="environment" para permitir PDFs e outros arquivos
         div.innerHTML = `
             <div class="input-group shadow-xs" style="border-radius: 8px; overflow: hidden;">
-                <input type="file" name="imagens" class="form-control border-light-subtle bg-light input-foto py-2" accept="image/*" capture="environment" style="font-size: 0.85rem;">
+                <input type="file" name="imagens" class="form-control border-light-subtle bg-light input-foto py-2" style="font-size: 0.85rem;">
                 <button type="button" class="btn btn-outline-danger btn-remover px-3" style="border-color: #e2e8f0;">
                     <i class="fas fa-trash-alt"></i>
                 </button>
             </div>
             <div class="preview-individual mt-2" style="display:none;">
-                <div class="d-inline-block position-relative bg-white p-1 rounded border shadow-sm">
-                    <img src="" class="rounded" style="height: 90px; width: 120px; object-fit: cover;">
                 </div>
-            </div>
         `;
 
         const input = div.querySelector('.input-foto');
         input.addEventListener('change', function() {
             const previewDiv = div.querySelector('.preview-individual');
-            const img = previewDiv.querySelector('img');
+            
             if (this.files && this.files[0]) {
-                const url = URL.createObjectURL(this.files[0]);
-                img.src = url;
+                const file = this.files[0];
+                const isImage = file.type.startsWith('image/');
+
+                if (isImage) {
+                    // Se for IMAGEM: mostra o preview em miniatura normalmente
+                    const url = URL.createObjectURL(file);
+                    previewDiv.innerHTML = `
+                        <div class="d-inline-block position-relative bg-white p-1 rounded border shadow-sm">
+                            <img src="${url}" class="rounded" style="height: 90px; width: 120px; object-fit: cover;">
+                        </div>
+                    `;
+                    previewDiv.querySelector('img').onload = () => URL.revokeObjectURL(url);
+                } else {
+                    // Se for OUTRO ARQUIVO (PDF, DOCX, etc.): mostra um card informando o arquivo anexado
+                    previewDiv.innerHTML = `
+                        <div class="d-inline-flex align-items-center bg-white p-2 rounded border shadow-sm gap-2">
+                            <i class="fas fa-file-alt text-primary fa-lg"></i>
+                            <span class="small fw-semibold text-dark text-truncate" style="max-width: 200px;">${file.name}</span>
+                            <span class="badge bg-light text-secondary border small">${(file.size / 1024 / 1024).toFixed(2)} MB</span>
+                        </div>
+                    `;
+                }
                 previewDiv.style.display = 'block';
-                img.onload = () => URL.revokeObjectURL(url);
+            } else {
+                previewDiv.style.display = 'none';
+                previewDiv.innerHTML = '';
             }
         });
 

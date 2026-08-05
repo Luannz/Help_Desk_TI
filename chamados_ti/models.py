@@ -283,6 +283,46 @@ class ImagemChamado(models.Model):
     def __str__(self):
         return f"Imagem #{self.id} - Chamado #{self.chamado.id}"
     
+    @property
+    def extensao(self):
+        if self.imagem:
+            return os.path.splitext(self.imagem.name)[1].lower()
+        return ""
+
+    @property
+    def eh_imagem(self):
+        # Lista de extensões que serão tratadas como imagens no frontend
+        return self.extensao in [
+            ".jpg",
+            ".jpeg",
+            ".png",
+            ".gif",
+            ".webp",
+            ".bmp",
+        ]
+
+    @property
+    def nome_arquivo(self):
+        if self.imagem:
+            return os.path.basename(self.imagem.name)
+        return "Anexo"
+
+    @property
+    def icone_fa(self):
+        """Retorna o ícone FontAwesome apropriado para cada tipo de arquivo"""
+        ext = self.extensao
+        if ext == ".pdf":
+            return "fas fa-file-pdf text-danger"
+        elif ext in [".doc", ".docx"]:
+            return "fas fa-file-word text-primary"
+        elif ext in [".xls", ".xlsx", ".csv"]:
+            return "fas fa-file-excel text-success"
+        elif ext in [".zip", ".rar", ".7z"]:
+            return "fas fa-file-archive text-warning"
+        elif ext in [".txt", ".log"]:
+            return "fas fa-file-alt text-secondary"
+        return "fas fa-file text-secondary"
+    
 
 class MensagemChamado(models.Model):
     # vincular a mensagem a um chamado específico
