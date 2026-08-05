@@ -14,7 +14,10 @@
                 </div>
                 <div>
                     <a href="{% url 'agente_dashboard' %}" class="btn btn-sm btn-outline-secondary px-3" style="border-radius: 6px; font-size: 0.85rem;">
-                        <i class="fas fa-arrow-left me-1"></i>Voltar ao Painel
+                        <i class="fas fa-arrow-left me-1"></i>Dashboard
+                    </a>
+                    <a href="{% url 'historico_usuario' chamado.solicitante.id %}" class="btn btn-sm btn-outline-secondary px-3" style="border-radius: 6px; font-size: 0.85rem;">
+                        <i class="fas me-1"></i>Histórico
                     </a>
                 </div>
             </div>

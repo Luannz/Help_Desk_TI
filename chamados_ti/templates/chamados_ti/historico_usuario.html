@@ -135,8 +135,15 @@
                             
                             <td class="pe-4 py-3 text-end">
                                 <a href="{% url 'detalhe_chamado' chamado.id %}" class="btn btn-xs btn-white border text-secondary fw-semibold bg-white hover-btn" style="font-size: 0.78rem; border-radius: 6px; padding: 4px 10px;">
-                                    Visualizar <i class="fas fa-chevron-right ms-1 small"></i>
+                                    Ver<i class="fas fa-eye ms-1 small"></i>
                                 </a>
+
+                                {% if request.user.is_agente and chamado.status != 'concluido' %}
+                                <a href="{% url 'atualizar_status' chamado.id %}" class="btn btn-xs btn-white border text-secondary fw-semibold bg-white btn-hover-expand ms-1" style="font-size: 0.78rem; border-radius: 6px; padding: 4px 10px;" title="Atender Chamado">
+                                    <i class="fas fa-pen"></i>
+                                    <span class="btn-text">Atender</span>
+                                </a>
+                                {% endif %}
                             </td>
                         </tr>
                     {% empty %}
@@ -249,6 +256,26 @@
         font-size: 0.75rem;
         line-height: 1.5;
         border-radius: 0.2rem;
+    }
+    /* Esconde o texto por padrão e define a transição */
+    .btn-hover-expand .btn-text {
+        display: inline-block;
+        max-width: 0;
+        opacity: 0;
+        overflow: hidden;
+        white-space: nowrap;
+        vertical-align: middle;
+        transition: max-width 0.3s ease, opacity 0.2s ease, margin 0.2s ease;
+    }
+
+    /* Quando passa o mouse no botão, o texto expande e aparece */
+    .btn-hover-expand:hover .btn-text {
+        max-width: 80px; /* Largura suficiente para a palavra 'Atender' */
+        opacity: 1;
+        margin-left: 6px; /* Espaçamento entre o ícone e o texto */
+        background-color: #f8f9fa!important;
+        color: var(--bs-primary)!important;
+        border-color: rgba(var(--bs-primary-rgb), 0.3)!important;
     }
 </style>
 {% endblock %}
