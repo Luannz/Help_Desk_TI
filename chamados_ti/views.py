@@ -508,21 +508,30 @@ def adicionar_mensagem_chamado(request, chamado_id):
     texto = request.POST.get('texto_mensagem', '').strip()
     
     if texto:
-        # Cria e salva a nova mensagem associando ao chamado e ao usuário logado
-        MensagemChamado.objects.create(
+        # 1. Guarda a instância da mensagem criada na variável 'mensagem'
+        mensagem = MensagemChamado.objects.create(
             chamado=chamado,
             autor=request.user,
             texto=texto
         )
+
+        # 2. SE O USUÁRIO FOR AGENTE: Processa os arquivos anexados (se houver)
+        if getattr(request.user, 'is_agente', False) and request.FILES.getlist('arquivos'):
+            for f in request.FILES.getlist('arquivos'):
+                ImagemChamado.objects.create(
+                    chamado=chamado,
+                    mensagem=mensagem,  # <--- Passa a mensagem criada acima
+                    imagem=f
+                )
         
-    # Redireciona o usuário de volta para a mesma página de detalhes do chamado
-    if not request.user.is_agente:
+    # Redireciona o usuário de volta para a rota correspondente
+    if not getattr(request.user, 'is_agente', False):
         url_destino = reverse('detalhe_chamado', kwargs={'chamado_id': chamado.id})
     else:
         url_destino = reverse('atualizar_status', kwargs={'chamado_id': chamado.id})
 
-    return redirect(f"{url_destino}#historico-chat") # Adiciona o fragmento para rolar até o histórico de mensagens
-
+    # Adiciona o fragmento para rolar até o histórico de mensagens
+    return redirect(f"{url_destino}#historico-chat")
 
 # api para o JS buscar os equipamentos de um setor específico
 @login_required

@@ -82,7 +82,7 @@
                         </div>
 
                         {% if chamado.imagens.exists %}
-                        <div class="mt-3 pt-3 border-top border-light-subtle">
+                        <div class="mt-3 pt-3 border-top border-light-subtle" id="secao-evidencias">
                             <span class="text-muted d-block mb-2" style="font-size: 0.8rem;">
                                 <i class="fas fa-paperclip me-1"></i>Evidências em Anexo:
                             </span>
@@ -246,7 +246,7 @@
                                 <span class="small">O histórico e as interações ficarão disponíveis assim que o atendimento for iniciado.</span>
                             </div>
                         {% else %}
-                        {# 2. SEÇÃO DO HISTÓRICO DE MENSAGENS (As "Provas") #}
+                        {# 2. SEÇÃO DO HISTÓRICO DE MENSAGENS  #}
                             <span class="fw-bold text-secondary small text-uppercase mb-3 d-block" style="letter-spacing: 0.5px;">
                                 <i class="fas fa-comments me-1 text-muted"></i>Histórico e Interações do Atendimento
                             </span>
@@ -285,6 +285,16 @@
                                             <div class="text-secondary small pre-wrap font-monospace mb-0" style="line-height: 1.4; font-size: 0.85rem;">
                                                 {{ mensagem.texto }}
                                             </div>
+                                            {% if mensagem.anexos.exists %}
+                                                <div class="mt-2 pt-2 border-top border-light-subtle d-flex flex-wrap gap-2">
+                                                    {% for anexo in mensagem.anexos.all %}
+                                                        <a href="#secao-evidencias" class="btn btn-sm btn-light border text-truncate p-1 px-2 d-inline-flex align-items-center scroll-suave" style="max-width: 200px; font-size: 0.75rem;">
+                                                            <i class="fas fa-paperclip me-1.5 text-primary"></i>
+                                                            <span class="text-truncate">{{ anexo.nome_arquivo }}</span>
+                                                        </a>
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
                                         </div>
 
                                     </div>
@@ -300,10 +310,21 @@
 
                             {# 3. CAMPO PARA CONTINUAR CONVERSANDO (Some se o chamado for concluído) #}
                             {% if chamado.status != 'concluido' %}
-                                <form method="POST" action="{% url 'adicionar_mensagem_chamado' chamado.id %}" class="mt-2">
+                                <form method="POST" action="{% url 'adicionar_mensagem_chamado' chamado.id %}" enctype="multipart/form-data" class="mt-2" id="form-chat">
                                     {% csrf_token %}
+                                    
+                                    <div id="file-preview-list" class="d-flex gap-2 mb-2 flex-wrap"></div>
+
                                     <div class="input-group shadow-xs" style="border-radius: 8px; overflow: hidden;">
-                                        <textarea id="texto_mensagem" name="texto_mensagem" class="form-control border-light-subtle bg-light py-2" rows="2" placeholder="Digite uma nova mensagem ..." style="font-size: 0.85rem; resize: none;" required></textarea>
+                                        <textarea id="texto_mensagem" name="texto_mensagem" class="form-control border-light-subtle bg-light py-2" rows="2" placeholder="Digite uma nova mensagem ou cole um print (Ctrl+V)..." style="font-size: 0.85rem; resize: none;" required></textarea>
+                                        
+                                        {% if user.is_agente %}
+                                            <label class="btn btn-light border-light-subtle text-secondary d-flex align-items-center px-3 m-0" title="Anexar arquivo/imagem">
+                                                <i class="fas fa-paperclip"></i>
+                                                <input type="file" name="arquivos" id="input_arquivos_agente" multiple class="d-none" onchange="mostrarPreviewArquivos(this)">
+                                            </label>
+                                        {% endif %}
+
                                         <button type="submit" class="btn btn-primary px-3 d-flex align-items-center">
                                             <i class="fas fa-paper-plane"></i>
                                         </button>
@@ -339,5 +360,69 @@ if (textareaMensagem && formChamado) {
         }
     });
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+    const textareaMensagem = document.getElementById('texto_mensagem');
+    const inputArquivos = document.getElementById('input_arquivos_agente');
+
+    // Executa apenas se os dois elementos existirem na página (ex: se o usuário for agente)
+    if (textareaMensagem && inputArquivos) {
+
+        textareaMensagem.addEventListener('paste', function(e) {
+            // Pega os itens colados do clipboard
+            const clipboardItems = (e.clipboardData || e.originalEvent.clipboardData).items;
+
+            for (let item of clipboardItems) {
+                // Verifica se o item colado é uma imagem
+                if (item.type.indexOf('image') !== -1) {
+                    
+                    // Extrai o arquivo de imagem colado
+                    const blob = item.getAsFile();
+                    
+                    // Cria um nome de arquivo padrão para o print colado
+                    const nomeArquivo = `print_${new Date().getTime()}.png`;
+                    const arquivoImagem = new File([blob], nomeArquivo, { type: blob.type });
+
+                    // Usa DataTransfer para manipular os arquivos do input file
+                    const dataTransfer = new DataTransfer();
+
+                    // MANTÉM os arquivos que já existiam no input (se houver)
+                    if (inputArquivos.files.length > 0) {
+                        Array.from(inputArquivos.files).forEach(file => dataTransfer.items.add(file));
+                    }
+
+                    // Adiciona o novo print colado
+                    dataTransfer.items.add(arquivoImagem);
+
+                    // Atualiza o input file com os novos arquivos
+                    inputArquivos.files = dataTransfer.files;
+
+                    // Atualiza a visualização dos arquivos (tags na tela)
+                    mostrarPreviewArquivos(inputArquivos);
+                }
+            }
+        });
+    }
+});
+
+// Função para exibir as tags visuais dos arquivos selecionados
+function mostrarPreviewArquivos(input) {
+    const previewContainer = document.getElementById('file-preview-list');
+    if (!previewContainer) return;
+    
+    previewContainer.innerHTML = '';
+    
+    if (input.files && input.files.length > 0) {
+        Array.from(input.files).forEach((file, index) => {
+            const badge = document.createElement('span');
+            badge.className = 'badge bg-primary-subtle text-primary border border-primary-subtle font-monospace d-inline-flex align-items-center gap-1';
+            badge.style.fontSize = '0.75rem';
+            badge.innerHTML = `<i class="fas fa-paperclip"></i> ${file.name}`;
+            
+            previewContainer.appendChild(badge);
+        });
+    }
+}
+
 </script>
 {% endblock %}

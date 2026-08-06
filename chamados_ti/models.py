@@ -234,38 +234,34 @@ class Chamado(models.Model):
                     # Verifica se o arquivo existe e se já não é um .webp
                     if os.path.exists(img_path) and not img_path.lower().endswith('.webp'):
                         try:
-                            # 1. Tenta abrir o arquivo como imagem
                             img = Image.open(img_path)
-
-                            # Girar a foto que vem girada do celular (EXIF)
                             img = ImageOps.exif_transpose(img)
 
-                            # Garante modo RGB (para PNGs transparentes ou GIFs)
                             if img.mode in ("RGBA", "P"):
                                 img = img.convert("RGB")
 
-                            # 2. Redimensionar (Mantendo a proporção)
                             max_size = (800, 800)
                             img.thumbnail(max_size, Image.LANCZOS)
 
-                            # 3. Converter para WebP em memória
                             temp_thumb = BytesIO()
                             img.save(temp_thumb, format='WEBP', quality=70)
                             temp_thumb.seek(0)
 
-                            # 4. Atualiza o arquivo no objeto
                             nome_arquivo = os.path.splitext(os.path.basename(img_path))[0] + ".webp"
-                            
-                            img_obj.imagem.save(nome_arquivo, ContentFile(temp_thumb.read()), save=False)
-                            img_obj.save()
-                            
-                            # 5. Remove o arquivo original antigo
-                            if os.path.exists(img_path) and not img_path.endswith('.webp'):
-                                os.remove(img_path)
+
+                            # 1. Guarda o caminho antigo antes de atualizar o FileField
+                            caminho_antigo = img_path
+
+                            # 2. Salva a nova imagem em WebP (o Django gera o novo arquivo)
+                            img_obj.imagem.save(nome_arquivo, ContentFile(temp_thumb.read()), save=True)
+
+                            # 3. Deleta o arquivo antigo se o novo caminho for diferente e o antigo ainda existir
+                            if os.path.exists(caminho_antigo) and caminho_antigo != img_obj.imagem.path:
+                                os.remove(caminho_antigo)
 
                         except (UnidentifiedImageError, OSError, Exception):
-                            # Se não for uma imagem válida (ex: PDF, TXT, etc.),
-                            # ignora a conversão e mantém o arquivo original intacto.
+                            # Se for PDF, DOCX, etc., o Pillow dispara erro e cai aqui,
+                            # ignorando a conversão e mantendo o arquivo intacto.
                             continue
 
 class ImagemChamado(models.Model):
@@ -274,6 +270,9 @@ class ImagemChamado(models.Model):
     imagem = models.FileField(upload_to='chamados/')
     descricao = models.CharField(max_length=200, blank=True)
     enviado_em = models.DateTimeField(auto_now_add=True)
+
+    # Passa 'MensagemChamado' como STRING entre aspas!
+    mensagem = models.ForeignKey('MensagemChamado', on_delete=models.CASCADE, related_name='anexos', null=True, blank=True)
     
     class Meta:
         verbose_name = 'Imagem do Chamado'
