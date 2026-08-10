@@ -330,9 +330,11 @@ document.addEventListener('DOMContentLoaded', function () {
     function atualizarInterfaceImagens() {
         const itens = containerInputs.querySelectorAll('.item-imagem');
         btnAdd.style.display = itens.length >= maxImagens ? 'none' : 'inline-block';
+        
+        // Força o botão de remover a ficar sempre visível em todos os itens
         itens.forEach(item => {
             const btnRemover = item.querySelector('.btn-remover');
-            btnRemover.style.display = itens.length > 1 ? 'block' : 'none';
+            btnRemover.style.display = 'block'; 
         });
     }
 
@@ -388,8 +390,23 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
 
+        // BLOCO SUBSTITUIDO PRA APARECER O BOTÃO DE REMOVER SEMPRE, MESMO SE FOR O ÚNICO ANEXO
         div.querySelector('.btn-remover').addEventListener('click', function() {
-            div.remove();
+            const totalItens = containerInputs.querySelectorAll('.item-imagem').length;
+
+            if (totalItens > 1) {
+                // Se tiver mais de 1 anexo, remove a linha inteira normalmente
+                div.remove();
+            } else {
+                // Se for o ÚNICO anexo da tela, limpa o arquivo selecionado e esconde o preview
+                const input = div.querySelector('.input-foto');
+                const previewDiv = div.querySelector('.preview-individual');
+                
+                input.value = ''; // Limpa o arquivo escolhido
+                previewDiv.style.display = 'none';
+                previewDiv.innerHTML = '';
+            }
+            
             atualizarInterfaceImagens();
         });
 
