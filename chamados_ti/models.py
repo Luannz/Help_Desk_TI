@@ -10,6 +10,8 @@ from django.core.files import File
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 import time
+from django.db.models.signals import post_delete
+from django.dispatch import receiver
 
 class Usuario(AbstractUser):
     username = models.CharField(
@@ -322,6 +324,10 @@ class ImagemChamado(models.Model):
             return "fas fa-file-alt text-secondary"
         return "fas fa-file text-secondary"
     
+@receiver(post_delete, sender=ImagemChamado)
+def excluir_arquivo_imagem(sender, instance, **kwargs):
+    if instance.imagem:
+        instance.imagem.delete(save=False) 
 
 class MensagemChamado(models.Model):
     # vincular a mensagem a um chamado específico
