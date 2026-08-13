@@ -283,7 +283,7 @@
                                             </div>
                                             
                                             <div class="text-secondary small pre-wrap font-monospace mb-0" style="line-height: 1.4; font-size: 0.85rem;">
-                                                {{ mensagem.texto }}
+                                                {{ mensagem.texto|linebreaksbr }}
                                             </div>
                                             {% if mensagem.anexos.exists %}
                                                 <div class="mt-2 pt-2 border-top border-light-subtle d-flex flex-wrap gap-2">
