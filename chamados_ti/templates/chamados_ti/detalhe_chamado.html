@@ -184,7 +184,7 @@
                                 </span>
                                 <div class="p-3 rounded border border-success-subtle font-monospace text-dark pre-wrap shadow-xs" 
                                     style="border-radius: 8px; font-size: 0.88rem; line-height: 1.5; background-color: #f4fbf7!important;">
-                                    {{ chamado.observacoes_agente }}
+                                    {{ chamado.observacoes_agente|linebreaksbr }}
                                 </div>
                             </div>
                         {% endif %}
@@ -230,7 +230,7 @@
                                             </div>
                                             
                                             <div class="text-secondary small pre-wrap font-monospace mb-0" style="line-height: 1.4; font-size: 0.85rem;">
-                                                {{ mensagem.texto }}
+                                                {{ mensagem.texto|linebreaksbr }}
                                             </div>
                                         </div>
 

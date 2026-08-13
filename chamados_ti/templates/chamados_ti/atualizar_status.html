@@ -233,9 +233,9 @@
                                 <span class="fw-bold text-success small text-uppercase mb-2 d-block" style="letter-spacing: 0.5px;">
                                     <i class="fas fa-check-circle me-1"></i>Parecer Técnico Final (Conclusão)
                                 </span>
-                                <div class="p-3 rounded border border-success-subtle font-monospace text-dark pre-wrap shadow-xs" 
+                                <div class="p-3 rounded border border-success-subtle font-monospace text-dark shadow-xs" 
                                     style="border-radius: 8px; font-size: 0.88rem; line-height: 1.5; background-color: #f4fbf7!important;">
-                                    {{ chamado.observacoes_agente }}
+                                    {{ chamado.observacoes_agente|linebreaksbr }}
                                 </div>
                             </div>
                         {% endif %}
@@ -282,7 +282,7 @@
                                                 <span class="text-muted" style="font-size: 0.7rem;">{{ mensagem.criado_em|date:"H:i" }}</span>
                                             </div>
                                             
-                                            <div class="text-secondary small pre-wrap font-monospace mb-0" style="line-height: 1.4; font-size: 0.85rem;">
+                                            <div class="text-secondary small font-monospace mb-0" style="line-height: 1.4; font-size: 0.85rem;">
                                                 {{ mensagem.texto|linebreaksbr }}
                                             </div>
                                             {% if mensagem.anexos.exists %}
