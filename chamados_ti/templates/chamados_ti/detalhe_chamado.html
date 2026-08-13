@@ -28,6 +28,30 @@
                 </div>
                 {% endif %}
             </div>
+            {% if chamado.status == 'pendente' %}
+                <div class="bg-light p-3 rounded mb-4 border border-light-subtle" style="border-radius: 8px;">
+                    <div class="d-flex align-items-center text-secondary">
+                        <i class="far fa-calendar-alt me-2 text-primary opacity-75"></i>
+                        <span class="fw-bold small text-uppercase me-3">Previsão de Atendimento:</span>
+                        
+                        <span class="fw-semibold text-dark" style="font-size: 0.9rem;">
+                            {% if chamado.previsao_atendimento %}
+                                <span class="fw-semibold text-dark" style="font-size: 0.9rem;">
+                                    {{ chamado.previsao_atendimento|date:"d/m/Y" }}
+                                    
+                                    <span class="text-muted mx-2 opacity-75" style="font-size: 0.85rem;">às</span>
+                                    
+                                    {{ chamado.previsao_atendimento|date:"H:i" }}
+                                </span>
+                            {% else %}
+                                <span class="text-muted fw-normal fst-italic" style="font-size: 0.85rem;">
+                                    Aguardando definição
+                                </span>
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+            {% endif %}
 
             <div class="card border-0 shadow-sm" style="border-radius: 12px;">
                 <div class="card-body p-4 text-dark">

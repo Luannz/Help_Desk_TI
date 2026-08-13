@@ -164,6 +164,37 @@
                             </small>
                         </div>
                     </div>
+                    {% if chamado.status == 'pendente' %}
+                        <div class="card mb-4 border-1 border-secondary-subtle bg-light">
+                            <div class="card-body p-3">
+                                <form method="POST" class="row g-3 align-items-center">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="status" value="{{ chamado.status }}">
+
+                                    <div class="col-auto">
+                                        <label for="id_previsao_atendimento" class="col-form-label fw-medium text-secondary">
+                                            <i class="far fa-calendar-alt me-1 text-primary"></i> Previsão de Atendimento:
+                                        </label>
+                                    </div>
+                                    
+                                    <div class="col-auto">
+                                        <input type="datetime-local" 
+                                                name="previsao_atendimento" 
+                                                id="id_previsao_atendimento" 
+                                                class="form-control form-control-sm border-light-subtle" 
+                                                style="font-size: 0.85rem; border-radius: 6px;"
+                                                value="{{ chamado.previsao_atendimento|date:'Y-m-d\TH:i'|default:'' }}">
+                                    </div>
+
+                                    <div class="col-auto">
+                                        <button type="submit" class="btn btn-sm btn-outline-secondary">
+                                            <i class="fas fa-save me-1"></i> Salvar
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    {% endif %}
 
                     <form method="post" class="border-top pt-4">
                         {% csrf_token %}

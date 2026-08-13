@@ -138,7 +138,7 @@ class Chamado(models.Model):
     
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pendente')
     prioridade = models.IntegerField(default=3, choices=PRIORIDADE_CHOICES)
-
+    previsao_atendimento = models.DateTimeField('Previsão de Atendimento', null=True, blank=True)
     criado_em = models.DateTimeField(auto_now_add=True)
     atualizado_em = models.DateTimeField(auto_now=True)
     iniciado_em = models.DateTimeField(null=True, blank=True)

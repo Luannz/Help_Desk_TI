@@ -12,6 +12,7 @@ from .models import Usuario, Setor, Equipamento, Chamado, ImagemChamado, Mensage
 from .forms import ChamadoForm, SetorForm, EquipamentoForm, RegistroUsuarioForm, EditarPerfilForm
 from datetime import datetime, timedelta
 from django.views.decorators.http import require_POST
+from django.db.models.functions import Lower
 import os
 
 from .utils import enviar_notificacao_email  # Importa a função de notificação
@@ -468,6 +469,7 @@ def atualizar_status(request, chamado_id):
     if request.method == 'POST':
         novo_status = request.POST.get('status')
         observacoes = request.POST.get('observacoes', '')
+        previsao = request.POST.get('previsao_atendimento')
         
         if novo_status in ['pendente', 'em_progresso', 'concluido']:
             chamado.status = novo_status
@@ -481,6 +483,9 @@ def atualizar_status(request, chamado_id):
             
             if observacoes:
                 chamado.observacoes_agente = observacoes
+
+            if 'previsao_atendimento' in request.POST:
+                chamado.previsao_atendimento = previsao if previsao else None
             
             chamado.save()
             messages.success(request, 'Atualizado com sucesso!')
@@ -567,7 +572,7 @@ def historicos(request):
     # Captura dos filtros do GET
     q = request.GET.get('q') or ''
     status_filtro = request.GET.get('status') or ''
-    ordenar = request.GET.get('ordenar') or 'recente'
+    ordenar = request.GET.get('ordenar') or 'nome'
 
     # Buscamos apenas usuários que já criaram pelo menos um chamado no sistema
     usuarios = Usuario.objects.filter(chamados_criados__isnull=False).distinct()
@@ -587,11 +592,9 @@ def historicos(request):
         chamados_abertos=Count('chamados_criados', filter=Q(chamados_criados__status__in=['pendente', 'em_progresso']))
     )
 
-    # Filtro de Busca (Nome, Sobrenome, Usuário ou E-mail)
+    # Filtro de Busca (Usuário ou E-mail)
     if q:
         usuarios = usuarios.filter(
-            Q(first_name__icontains=q) | 
-            Q(last_name__icontains=q) |
             Q(username__icontains=q) |
             Q(email__icontains=q)
         )
@@ -599,22 +602,22 @@ def historicos(request):
     # APLICAÇÃO DA ORDENAÇÃO SELECIONADA
     hoje = timezone.now().date()
     if ordenar == 'abertos_primeiro':
-        # Ordena pelos que mais possuem chamados em aberto (Fila + Atendimento)
         usuarios = usuarios.order_by('-chamados_abertos', F('ultima_atividade').desc(nulls_last=True))
     
     elif ordenar == 'ultimo_hoje':
-        # Ordena colocando quem abriu chamado HOJE primeiro. Os demais vêm depois
         usuarios = usuarios.annotate(
             abriu_hoje=Count('chamados_criados', filter=Q(chamados_criados__criado_em__date=hoje))
         ).order_by('-abriu_hoje', F('ultima_atividade').desc(nulls_last=True))
         
     elif ordenar == 'mais_chamados':
-        # Ordena por quem tem maior volume histórico de chamados
         usuarios = usuarios.order_by('-total_chamados', F('ultima_atividade').desc(nulls_last=True))
         
-    else: # 'recente'
-        # Ordenação padrão: Atividade mais recente primeiro
+    elif ordenar == 'recente':
         usuarios = usuarios.order_by(F('ultima_atividade').desc(nulls_last=True))
+
+    else: # 'nome' (Padrão)
+        # Ordena apenas pelo username (case-insensitive para ignorar maiúsculas/minúsculas)
+        usuarios = usuarios.order_by(Lower('username'))
 
     # ================= LOGICA DA PAGINAÇÃO =================
     itens_por_pagina = 10  # quantidade de usuários por página 

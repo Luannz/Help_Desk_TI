@@ -201,6 +201,20 @@
                         </div>
                         {% endif %}
                     </div>
+                    {% if chamado.status == 'pendente' %}
+                    <div class="d-flex align-items-center mb-1 text-muted" style="font-size: 0.78rem;">
+                        <i class="fas fa-clock me-1 text-secondary" style="font-size: 0.72rem; margin-top: -2px;"></i>
+                        <span class="lh-1">Previsão: 
+                            {% if chamado.previsao_atendimento %}
+                                <strong class="text-dark">{{ chamado.previsao_atendimento|date:"d/m" }}</strong>
+                                <span class="text-muted mx-1 opacity-75" style="font-size: 0.72rem;">às</span>
+                                <strong class="text-dark">{{ chamado.previsao_atendimento|date:"H:i" }}</strong>
+                            {% else %}
+                                <span class="fst-italic opacity-75">Não informada</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                    {% endif %}
 
                     <hr class="my-3 text-black-50 opacity-10">
 

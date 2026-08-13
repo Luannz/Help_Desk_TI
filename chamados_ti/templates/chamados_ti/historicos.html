@@ -23,12 +23,13 @@
                 <div class="col-md-4">
                     <div class="input-group">
                         <span class="input-group-text bg-light border-light-subtle text-muted"><i class="fas fa-search"></i></span>
-                        <input type="text" name="q" value="{{ search_query }}" class="form-control bg-light border-light-subtle text-dark" placeholder="Buscar por nome, usuário ou e-mail..." style="font-size: 0.9rem;">
+                        <input type="text" name="q" value="{{ search_query }}" class="form-control bg-light border-light-subtle text-dark" placeholder="Buscar por nome ou e-mail..." style="font-size: 0.9rem;">
                     </div>
                 </div>
                 
                 <div class="col-md-3">
                     <select name="ordenar" class="form-select bg-light border-light-subtle text-dark" style="font-size: 0.9rem;">
+                        <option value="nome" {% if ordenacao_selecionada == 'nome' %}selected{% endif %}>Ordem alfabética (A-Z)</option>
                         <option value="recente" {% if ordenacao_selecionada == 'recente' %}selected{% endif %}>Última atividade (Geral)</option>
                         <option value="ultimo_hoje" {% if ordenacao_selecionada == 'ultimo_hoje' %}selected{% endif %}>Quem abriu chamado HOJE</option>
                         <option value="abertos_primeiro" {% if ordenacao_selecionada == 'abertos_primeiro' %}selected{% endif %}>Mais chamados em ABERTO</option>
@@ -56,9 +57,9 @@
                                 <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 42px; height: 42px;">
                                     <i class="fas fa-user-circle fa-lg"></i>
                                 </div>
-                                <div>
-                                    <h6 class="fw-bold m-0 text-dark tracking-tight">{{ usuario.get_full_name|default:usuario.username }}</h6>
-                                    <small class="text-muted font-monospace" style="font-size: 0.75rem;">@{{ usuario.username }}</small>
+                                <div class="overflow-hidden">
+                                    <h6 class="fw-bold m-0 text-dark tracking-tight text-truncate">{{ usuario.username }}</h6>
+                                    <small class="text-muted font-monospace" style="font-size: 0.75rem;">{{ usuario.email }}</small>
                                 </div>
                             </div>
 
@@ -82,7 +83,7 @@
                         </div>
 
                         <div class="bg-light p-2.5 rounded border border-light-subtle" style="border-radius: 8px;">
-                            <span class="text-muted d-block" style="font-size: 0.7rem; text-uppercase; font-weight: bold; letter-spacing: 0.3px;">Última Ocorrência:</span>
+                            <span class="text-muted d-block" style="font-size: 0.7rem; text-transform: uppercase; font-weight: bold; letter-spacing: 0.3px;">Última Ocorrência:</span>
                             {% if usuario.ultimo_chamado %}
                                 <div class="d-flex justify-content-between align-items-center mt-1">
                                     <span class="text-secondary text-truncate me-2 fw-medium" style="font-size: 0.82rem; max-width: 160px;">
@@ -107,6 +108,7 @@
             </div>
         {% endfor %}
     </div>
+
     {% if usuarios.has_other_pages %}
         <nav class="d-flex justify-content-center mt-4">
             <ul class="pagination pagination-sm shadow-sm" style="border-radius: 6px; overflow: hidden;">
