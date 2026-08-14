@@ -20,7 +20,11 @@ from .utils import enviar_notificacao_email  # Importa a função de notificaç�
 
 def login_view(request):
     if request.user.is_authenticated:
+        # Se ele já está logado mas PRECISA trocar a senha, redireciona pra lá!
+        if request.user.forcar_troca_senha:
+            return redirect('primeiro_acesso_senha')
         return redirect('dashboard')
+    
     if request.method == 'POST':
         username = request.POST['username']
         password = request.POST['password']
@@ -83,7 +87,7 @@ def csrf_failure_view(request, reason=""):
     messages.warning(request, "Sua sessão expirou por inatividade. Por favor, entre novamente.")
     
     # Redireciona para a página de login
-    return redirect('login_view') # nome da URL de login
+    return redirect('login') # nome da URL de login
 
 def registrar_view(request):
     # Se NÃO for agente e JÁ estiver logado, manda pro dashboard
