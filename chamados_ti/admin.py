@@ -8,7 +8,7 @@ class UsuarioAdmin(UserAdmin):
     fieldsets = UserAdmin.fieldsets + (
         ('Informações Adicionais', {'fields': ('tipo', 'setor', 'forcar_troca_senha')}),
     )
-    list_display = ['username', 'tipo', 'setor', 'forcar_troca_senha']
+    list_display = ['username','email', 'tipo', 'setor', 'forcar_troca_senha']
     list_filter = ['tipo', 'setor', 'forcar_troca_senha']
 
 
