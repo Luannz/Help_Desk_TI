@@ -12,6 +12,7 @@ urlpatterns = [
     path('agente/', views.agente_dashboard, name='agente_dashboard'),
     path('registrar/', views.registrar_view, name='registrar'),
     path('perfil/editar/', views.editar_perfil_view, name='editar_perfil'),
+    path('primeiro-acesso/', views.primeiro_acesso_senha_view, name='primeiro_acesso_senha'),
 
     #=================== SETORES ====================
     path('setores/', views.gerenciar_setores, name='gerenciar_setores'),

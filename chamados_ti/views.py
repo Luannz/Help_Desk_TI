@@ -13,6 +13,7 @@ from .forms import ChamadoForm, SetorForm, EquipamentoForm, RegistroUsuarioForm,
 from datetime import datetime, timedelta
 from django.views.decorators.http import require_POST
 from django.db.models.functions import Lower
+from django.contrib.auth import update_session_auth_hash
 import os
 
 from .utils import enviar_notificacao_email  # Importa a função de notificação
@@ -23,12 +24,55 @@ def login_view(request):
     if request.method == 'POST':
         username = request.POST['username']
         password = request.POST['password']
+        lembrar = request.POST.get('lembrar') #pega o checkbox do "lembrar de mim"
+
         user = authenticate(request, username=username, password=password)
         if user:
             login(request, user)
+            
+            # --- PARTE 2: Lógica do "Lembrar de mim" ---
+            if lembrar:
+                # Mantém logado por 30 dias (30 dias * 24 horas * 60 min * 60 seg)
+                request.session.set_expiry(2592000)
+            else:
+                # Expira quando fechar o navegador
+                request.session.set_expiry(0)
+
+            # --- PARTE 1: Redirecionamento da Troca de Senha ---
+            if user.forcar_troca_senha:
+                return redirect('primeiro_acesso_senha')
+
             return redirect('dashboard')
+
         messages.error(request, 'Nome de usuário ou senha inválidos.')
     return render(request, 'chamados_ti/login.html')
+
+@login_required
+def primeiro_acesso_senha_view(request):
+    # Se ele não precisa trocar a senha, manda pro dashboard
+    if not request.user.forcar_troca_senha:
+        return redirect('dashboard')
+
+    if request.method == 'POST':
+        senha1 = request.POST.get('nova_senha')
+        senha2 = request.POST.get('confirmar_senha')
+
+        if senha1 and senha1 == senha2:
+            # Atualiza a senha de forma segura
+            user = request.user
+            user.set_password(senha1)
+            user.forcar_troca_senha = False # Remove a obrigatoriedade
+            user.save()
+
+            # Mantém o usuário logado após alterar a senha
+            update_session_auth_hash(request, user)
+
+            messages.success(request, 'Senha atualizada com sucesso! Bem-vindo ao sistema.')
+            return redirect('dashboard')
+        else:
+            messages.error(request, 'As senhas não coincidem. Tente novamente.')
+
+    return render(request, 'chamados_ti/primeiro_acesso_senha.html')
 
 def logout_view(request):
     logout(request)
@@ -42,23 +86,38 @@ def csrf_failure_view(request, reason=""):
     return redirect('login_view') # nome da URL de login
 
 def registrar_view(request):
-    if request.user.is_authenticated:
+    # Se NÃO for agente e JÁ estiver logado, manda pro dashboard
+    if request.user.is_authenticated and not request.user.is_agente:
         return redirect('dashboard')
-        
+
+    is_agente_criando = request.user.is_authenticated and request.user.is_agente
+
     if request.method == 'POST':
         form = RegistroUsuarioForm(request.POST)
         if form.is_valid():
             user = form.save(commit=False)
-            # Como padrão, novos usuários criados sozinhos entram como 'solicitante'
-            user.tipo = 'solicitante' 
-            user.save()
+            user.tipo = 'solicitante'
             
-            messages.success(request, 'Conta criada com sucesso! Você já pode fazer login.')
+            # Se for um Agente cadastrando, verifica o checkbox "forcar_troca_senha"
+            if is_agente_criando:
+                user.forcar_troca_senha = request.POST.get('forcar_troca_senha') == 'on'
+
+            user.save()
+
+            messages.success(request, f'Conta de {user.username} criada com sucesso!')
+
+            # Se quem criou foi o agente, ele continua na tela de cadastro, senão, redireciona para o login
+            if is_agente_criando:
+                return redirect('dashboard_admin_agente') 
+
             return redirect('login')
     else:
         form = RegistroUsuarioForm()
-        
-    return render(request, 'chamados_ti/registrar.html', {'form': form})
+
+    return render(request, 'chamados_ti/registrar.html', {
+        'form': form,
+        'is_agente_criando': is_agente_criando
+    })
 
 @login_required
 def editar_perfil_view(request):

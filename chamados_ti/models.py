@@ -40,6 +40,7 @@ class Usuario(AbstractUser):
     setor = models.ForeignKey('Setor', on_delete=models.SET_NULL, null=True, blank=True)
     telefone = models.CharField(max_length=15, blank=True)
     email = models.EmailField(unique=True)
+    forcar_troca_senha = models.BooleanField('Forçar troca de senha no próximo login', default=False)
     
     class Meta:
         verbose_name = 'Usuário'

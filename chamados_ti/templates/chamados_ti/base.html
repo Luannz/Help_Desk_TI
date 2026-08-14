@@ -500,7 +500,7 @@
 </head>
 <body>
 
-    <body class="{% if not user.is_authenticated or request.resolver_match.url_name == 'login' or request.path == '/' %}no-sidebar{% endif %}">
+    <body class="{% if not user.is_authenticated or request.resolver_match.url_name in 'login,registrar,primeiro_acesso_senha' or request.path == '/' %}no-sidebar{% endif %}">
 
     {% if user.is_authenticated and request.resolver_match.url_name != 'login' and request.path != '/' %}
     <button class="sidebar-toggle" id="sidebarToggle" aria-label="Abrir menu">
@@ -511,7 +511,7 @@
 
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-    {% if user.is_authenticated and request.resolver_match.url_name != 'login' and request.path != '/' %}
+    {% if user.is_authenticated and request.resolver_match.url_name not in 'login,registrar,primeiro_acesso_senha' and request.path != '/' %}
     <aside class="sidebar" id="sidebar">
 
         <div class="sidebar-header">

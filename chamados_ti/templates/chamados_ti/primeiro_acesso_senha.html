@@ -1,0 +1,35 @@
+{% extends "chamados_ti/base.html" %}
+
+{% block content %}
+<div class="row justify-content-center align-items-center" style="min-height: 80vh;">
+    <div class="col-md-4">
+        <div class="card p-4 shadow-sm border-0" style="border-radius: 12px;">
+            <div class="text-center mb-4">
+                <span class="badge bg-primary-subtle text-dark px-3 py-2 rounded mb-2" style="font-size: 0.85rem;">
+                    <i class="fas fa-lock me-1"></i> Primeiro Acesso
+                </span>
+                <h5 class="fw-bold text-dark m-0">Redefinição de Senha</h5>
+                <p class="text-muted small mt-1">Sua conta exige a criação de uma nova senha pessoal.</p>
+            </div>
+
+            <form method="POST">
+                {% csrf_token %}
+                
+                <div class="mb-3 text-start">
+                    <label class="form-label fw-semibold text-secondary small">Nova Senha</label>
+                    <input type="password" name="nova_senha" class="form-control" required placeholder="Digite sua nova senha">
+                </div>
+
+                <div class="mb-3 text-start">
+                    <label class="form-label fw-semibold text-secondary small">Confirmar Nova Senha</label>
+                    <input type="password" name="confirmar_senha" class="form-control" required placeholder="Repita a nova senha">
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100 py-2 mt-2 fw-semibold" style="border-radius: 6px;">
+                    Salvar e Continuar
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
