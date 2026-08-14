@@ -6,10 +6,10 @@ from .models import Usuario, Setor, Equipamento, Chamado, ImagemChamado
 @admin.register(Usuario)
 class UsuarioAdmin(UserAdmin):
     fieldsets = UserAdmin.fieldsets + (
-        ('Informações Adicionais', {'fields': ('tipo', 'setor')}),
+        ('Informações Adicionais', {'fields': ('tipo', 'setor', 'forcar_troca_senha')}),
     )
-    list_display = ['username', 'tipo']
-    list_filter = ['tipo']
+    list_display = ['username', 'tipo', 'setor', 'forcar_troca_senha']
+    list_filter = ['tipo', 'setor', 'forcar_troca_senha']
 
 
 @admin.register(Setor)
