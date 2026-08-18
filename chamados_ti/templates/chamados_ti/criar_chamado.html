@@ -16,6 +16,21 @@
                 <form method="post" enctype="multipart/form-data" id="formChamado">
                     {% csrf_token %}
                     
+                    {# ── Solicitante (Aparece apenas para Agente / Agente Admin) ───────────────────── #}
+                    {% if form.solicitante %}
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-muted text-uppercase" style="letter-spacing: 0.5px;">Solicitante</label>
+                            <div class="form-control-container select-wrapper">
+                                {{ form.solicitante }}
+                            </div>
+                            {% if form.solicitante.errors %}
+                                <div class="text-danger small mt-1 fw-semibold">
+                                    <i class="fas fa-exclamation-circle me-1"></i>{{ form.solicitante.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+
                     {# ── Setor: Inteligente (Fixado ou Select) ───────────────────────────── #}
                     {% if user.setor %}
                         {# Se o usuário JÁ TEM setor cadastrado no perfil dele #}
@@ -158,7 +173,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const categoriaButtons = document.getElementById('categoria_buttons');
     const blocoSelectEquip = document.getElementById('bloco_select_equip');
     const selectEquipDjango = document.getElementById('id_equipamento');
-    const blocoSemEquipamentos = document.getElementById('bloco_sem_equipamentos'); 
+    const blocoSemEquipamentos = document.getElementById('bloco_sem_equipamentos');
+    const selectSolicitante = document.getElementById('id_solicitante'); 
 
     // Estado local
     let dadosDoSetor = {};        
@@ -290,6 +306,37 @@ document.addEventListener('DOMContentLoaded', function () {
 
         return btn;
     }
+
+    // ── Função para atualizar o setor com base no solicitante selecionado ─
+    function atualizarSetorPeloSolicitante(userId) {
+        if (!userId) return;
+
+        fetch(`/api/setor-do-usuario/${userId}/`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.setor_id && selectSetor) {
+                    // Atualiza o valor do elemento de setor (seja input hidden ou select)
+                    selectSetor.value = data.setor_id;
+
+                    // Já recarrega automaticamente a lista de equipamentos do novo setor
+                    carregarEquipamentosDoSetor(data.setor_id);
+                }
+            })
+            .catch(err => console.error('Erro ao buscar setor do usuário:', err));
+    }
+
+    // Escuta a mudança do solicitante (quando o agente seleciona outro usuário)
+    if (selectSolicitante) {
+        selectSolicitante.addEventListener('change', function () {
+            atualizarSetorPeloSolicitante(this.value);
+        });
+
+        // Caso a tela já inicie com um solicitante pré-selecionado
+        if (selectSolicitante.value) {
+            atualizarSetorPeloSolicitante(selectSolicitante.value);
+        }
+    }
+
 
     // ── Popula o select real do Django com os equipamentos ───────────────
     function popularSelectEquipamento() {

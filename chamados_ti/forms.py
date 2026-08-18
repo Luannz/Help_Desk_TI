@@ -3,6 +3,9 @@ from django import forms
 from django.forms import ClearableFileInput
 from .models import Chamado, Setor, Equipamento, Usuario
 from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 
 class MultipleFileInput(ClearableFileInput):
     allow_multiple_selected = True
@@ -42,7 +45,7 @@ class ChamadoForm(forms.ModelForm):
 
     class Meta:
         model = Chamado
-        fields = ['tipo', 'equipamento', 'subcategoria_duvida', 'descricao', 'prioridade']
+        fields = ['solicitante','tipo', 'equipamento', 'subcategoria_duvida', 'descricao', 'prioridade']
         widgets = {
             'tipo': forms.Select(attrs={
                 'class': 'form-control',
@@ -67,8 +70,27 @@ class ChamadoForm(forms.ModelForm):
             }),
         }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, user=None, **kwargs):
         super().__init__(*args, **kwargs)
+
+        # 1. Trata o campo 'solicitante'
+        if user and user.tipo in ['agente', 'agente_admin']:
+            self.fields['solicitante'] = forms.ModelChoiceField(
+                queryset=User.objects.order_by('first_name', 'username'),
+                required=True,
+                label='Solicitante do Chamado',
+                widget=forms.Select(
+                    attrs={'class': 'form-select', 'id': 'id_solicitante'}
+                ),
+                empty_label='— Selecione o solicitante —',
+            )
+            # Define o valor inicial como o agente logado apenas na primeira exibição
+            if not self.is_bound:
+                self.fields['solicitante'].initial = user.id
+        else:
+            # REMOVE o campo para usuários comuns (solicitantes)
+            if 'solicitante' in self.fields:
+                del self.fields['solicitante']
 
         # Começa vazio — o JS popula via fetch conforme o setor escolhido
         self.fields['equipamento'].queryset = Equipamento.objects.none()

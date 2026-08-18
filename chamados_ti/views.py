@@ -2,6 +2,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import login, logout, authenticate
+from django.contrib.auth import get_user_model
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.utils import timezone
@@ -15,6 +16,8 @@ from django.views.decorators.http import require_POST
 from django.db.models.functions import Lower
 from django.contrib.auth import update_session_auth_hash
 import os
+
+User = get_user_model()
 
 from .utils import enviar_notificacao_email  # Importa a função de notificação
 
@@ -464,7 +467,7 @@ def editar_equipamento(request, pk):
 def criar_chamado(request):
 
     if request.method == 'POST':
-        form = ChamadoForm(request.POST, request.FILES)
+        form = ChamadoForm(request.POST, request.FILES, user=request.user)
 
         # Expande o queryset para o Django aceitar o ID do equipamento na validação
         equip_id_post = request.POST.get('equipamento')
@@ -483,7 +486,11 @@ def criar_chamado(request):
                     'setores': setores,
                 })
             chamado = form.save(commit=False)
-            chamado.solicitante = request.user
+
+            # Se o solicitante foi selecionado no form (agente), ele já é associado automaticamente.
+            # Se o campo foi removido (usuário comum), definimos como o usuário logado:
+            if 'solicitante' not in form.cleaned_data or not chamado.solicitante:
+                chamado.solicitante = request.user
 
             # Salva o setor selecionado no formulário
             if setor_id:
@@ -506,7 +513,7 @@ def criar_chamado(request):
             messages.error(request, 'Erro ao criar chamado. Verifique os campos.')
 
     else:
-        form = ChamadoForm()
+        form = ChamadoForm(user=request.user)
 
     setores = Setor.objects.order_by('nome')
 
@@ -622,6 +629,15 @@ def api_equipamentos_do_setor(request, setor_id):
             grupos[cat_label] = equipamentos
 
     return JsonResponse(grupos)
+
+@login_required
+def api_obter_setor_usuario(request, user_id):
+  try:
+    usuario = User.objects.get(pk=user_id)
+    setor_id = usuario.setor.id if usuario.setor else None
+    return JsonResponse({'setor_id': setor_id})
+  except User.DoesNotExist:
+    return JsonResponse({'setor_id': None}, status=404)
 
 
 

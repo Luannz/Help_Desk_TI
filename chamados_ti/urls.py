@@ -38,6 +38,7 @@ urlpatterns = [
     #==================== Endpoint JSON para o JS ===================
     path('api/equipamentos/', views.api_equipamentos, name='api_equipamentos'),
     path('api/equipamentos-do-setor/<int:setor_id>/', views.api_equipamentos_do_setor, name='api_equipamentos_do_setor'),
+    path('api/setor-do-usuario/<int:user_id>/',views.api_obter_setor_usuario, name='api_setor_usuario'),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -68,7 +68,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-
+    # middleware criado pra interceptar as requisições se tiver com o campo booleano de trocar senha
     'chamados_ti.middleware.ForcarTrocaSenhaMiddleware',
 
     'django.contrib.messages.middleware.MessageMiddleware',
