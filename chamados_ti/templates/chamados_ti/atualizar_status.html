@@ -91,25 +91,26 @@
                                 {% for img in chamado.imagens.all %}
                                 <div class="col-6 col-sm-4 col-md-3 col-lg-2">
                                     {% if img.eh_imagem %}
-                                        <a href="{{ img.imagem.url }}" target="_blank" title="{{ img.nome_arquivo }}" class="d-block h-100">
+                                        <button type="button" 
+                                                class="btn p-0 border-0 w-100 h-100 bg-transparent" 
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#modalVisualizarImagem" 
+                                                onclick="abrirModalImagem('{{ img.imagem.url }}', '{{ img.nome_arquivo }}')">
                                             <img src="{{ img.imagem.url }}" 
                                                 alt="Anexo {{ forloop.counter }}" 
                                                 class="img-fluid rounded border hover-shadow"
                                                 style="cursor: pointer; aspect-ratio: 1; object-fit: cover; width: 100%; height: 100%;">
-                                        </a>
+                                        </button>
                                     {% else %}
                                         <a href="{{ img.imagem.url }}" 
                                         target="_blank" 
                                         class="d-flex flex-column align-items-center justify-content-center p-2 rounded border bg-light text-decoration-none hover-shadow text-center h-100" 
                                         style="aspect-ratio: 1; width: 100%;"
                                         title="{{ img.nome_arquivo }}">
-                                            
                                             <i class="{{ img.icone_fa }} fa-2x mb-1"></i>
-                                            
                                             <span class="text-dark small fw-semibold text-truncate w-100 px-1" style="font-size: 0.75rem;">
                                                 {{ img.nome_arquivo }}
                                             </span>
-                                            
                                             <span class="badge bg-secondary-subtle text-secondary border mt-1" style="font-size: 0.65rem;">
                                                 {{ img.extensao|upper|slice:"1:" }}
                                             </span>
@@ -373,6 +374,27 @@
     </div>
 </div>
 
+<!-- Modal de Visualização de Imagem -->
+<div class="modal fade" id="modalVisualizarImagem" tabindex="-1" aria-labelledby="modalVisualizarImagemLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header border-0 pb-0">
+                <h6 class="modal-title text-muted fw-bold" id="modalVisualizarImagemLabel">Visualização de Anexo</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center p-3">
+                <img id="imagemExpandida" src="" class="img-fluid rounded shadow-sm" style="max-height: 75vh; object-fit: contain;">
+            </div>
+            <div class="modal-footer border-0 pt-0 justify-content-between">
+                <small id="nomeImagemAnexo" class="text-muted font-monospace text-truncate" style="max-width: 60%;"></small>
+                <a id="linkDownloadImagem" href="" target="_blank" class="btn btn-sm btn-primary">
+                    <i class="fas fa-external-link-alt me-1"></i>Abrir Original
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 // Procura o textarea e o formulário
 const textareaMensagem = document.getElementById('texto_mensagem');
@@ -453,6 +475,17 @@ function mostrarPreviewArquivos(input) {
             previewContainer.appendChild(badge);
         });
     }
+}
+
+// Função para carregar a imagem dinamicamente dentro do Modal
+function abrirModalImagem(urlImagem, nomeArquivo) {
+    const imgElement = document.getElementById('imagemExpandida');
+    const nomeElement = document.getElementById('nomeImagemAnexo');
+    const linkElement = document.getElementById('linkDownloadImagem');
+
+    if (imgElement) imgElement.src = urlImagem;
+    if (nomeElement) nomeElement.textContent = nomeArquivo;
+    if (linkElement) linkElement.href = urlImagem;
 }
 
 </script>

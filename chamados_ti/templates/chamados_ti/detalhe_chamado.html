@@ -123,18 +123,25 @@
                                 {% for img in chamado.imagens.all %}
                                 <div class="col-6 col-sm-4 col-md-3 col-lg-2">
                                     {% if img.eh_imagem %}
-                                        <a href="{{ img.imagem.url }}" target="_blank" title="{{ img.nome_arquivo }}" class="d-block h-100">
+                                        <!-- Botão acionador do Modal para Imagens -->
+                                        <div title="{{ img.nome_arquivo }}" 
+                                             class="d-block h-100 btn-open-image-modal" 
+                                             data-bs-toggle="modal" 
+                                             data-bs-target="#imageModal" 
+                                             data-img-url="{{ img.imagem.url }}" 
+                                             data-img-title="{{ img.nome_arquivo }}">
                                             <img src="{{ img.imagem.url }}" 
-                                                alt="Anexo {{ forloop.counter }}" 
-                                                class="img-fluid rounded border hover-shadow"
-                                                style="cursor: pointer; aspect-ratio: 1; object-fit: cover; width: 100%; height: 100%;">
-                                        </a>
+                                                 alt="Anexo {{ forloop.counter }}" 
+                                                 class="img-fluid rounded border hover-shadow"
+                                                 style="cursor: pointer; aspect-ratio: 1; object-fit: cover; width: 100%; height: 100%;">
+                                        </div>
                                     {% else %}
+                                        <!-- Download direto para outros formatos -->
                                         <a href="{{ img.imagem.url }}" 
-                                        target="_blank" 
-                                        class="d-flex flex-column align-items-center justify-content-center p-2 rounded border bg-light text-decoration-none hover-shadow text-center h-100" 
-                                        style="aspect-ratio: 1; width: 100%;"
-                                        title="{{ img.nome_arquivo }}">
+                                           target="_blank" 
+                                           class="d-flex flex-column align-items-center justify-content-center p-2 rounded border bg-light text-decoration-none hover-shadow text-center h-100" 
+                                           style="aspect-ratio: 1; width: 100%;"
+                                           title="{{ img.nome_arquivo }}">
                                             
                                             <i class="{{ img.icone_fa }} fa-2x mb-1"></i>
                                             
@@ -290,23 +297,62 @@
         </div>
     </div>
 </div>
+
+<!-- Modal para Visualização da Imagem -->
+<div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0 pb-0">
+                <h6 class="modal-title text-muted fw-bold" id="imageModalLabel">Visualização da Imagem</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body text-center p-3">
+                <img id="modalImage" src="" class="img-fluid rounded shadow-sm" style="max-height: 75vh; object-fit: contain;" alt="Visualização em tamanho real">
+            </div>
+            <div class="modal-footer border-0 pt-0 justify-content-between">
+                <a id="modalDownloadBtn" href="" download class="btn btn-sm btn-outline-primary px-3" style="border-radius: 6px;">
+                    <i class="fas fa-download me-1"></i> Baixar Imagem Original
+                </a>
+                <button type="button" class="btn btn-sm btn-secondary px-3" data-bs-dismiss="modal" style="border-radius: 6px;">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
-// Procura o textarea e o formulário
+// Evento para envio do formulário com Enter
 const textareaMensagem = document.getElementById('texto_mensagem');
 const formChamado = textareaMensagem ? textareaMensagem.closest('form') : null;
 
 if (textareaMensagem && formChamado) {
     textareaMensagem.addEventListener('keydown', function(e) {
-        // Se apertou Enter SEM a tecla Shift
         if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault(); // Impede a quebra de linha padrão
-            
-            // Só envia se o campo não estiver vazio (removendo espaços)
+            e.preventDefault();
             if (textareaMensagem.value.trim() !== '') {
-                formChamado.requestSubmit(); // Envia o formulário disparando os eventos de validação
+                formChamado.requestSubmit();
             }
         }
     });
 }
+
+// Script para alimentar dinamicamente o modal da imagem
+document.addEventListener('DOMContentLoaded', function () {
+    const imageModal = document.getElementById('imageModal');
+    if (imageModal) {
+        imageModal.addEventListener('show.bs.modal', function (event) {
+            const triggerElement = event.relatedTarget;
+            const imageUrl = triggerElement.getAttribute('data-img-url');
+            const imageTitle = triggerElement.getAttribute('data-img-title');
+
+            const modalImage = imageModal.querySelector('#modalImage');
+            const modalTitle = imageModal.querySelector('#imageModalLabel');
+            const modalDownloadBtn = imageModal.querySelector('#modalDownloadBtn');
+
+            modalImage.src = imageUrl;
+            modalTitle.textContent = imageTitle || 'Visualização do Anexo';
+            modalDownloadBtn.href = imageUrl;
+        });
+    }
+});
 </script>
 {% endblock %}
