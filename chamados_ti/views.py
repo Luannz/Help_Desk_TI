@@ -249,7 +249,19 @@ def agente_dashboard(request):
     page_number = request.GET.get('page')
     chamados_paginados = paginator.get_page(page_number)
 
-    return render(request, 'chamados_ti/agente_dashboard.html', {
+    # ============ Definição qual dos templates ta selecionado ==========
+    modo_param = request.GET.get('modo')
+    if modo_param in ['cards', 'lista']:
+        request.session['modo_view'] = modo_param
+
+    modo_view = request.session.get('modo_view', 'cards') # o padrão é 'cards'
+
+    if modo_view == 'lista':
+        template_nome = 'chamados_ti/agente_dashboard_lista.html'
+    else:
+        template_nome = 'chamados_ti/agente_dashboard.html'
+
+    return render(request, template_nome, {
         'chamados': chamados_paginados, 
         'pendentes': pendentes,
         'em_progresso': em_progresso,
@@ -258,6 +270,7 @@ def agente_dashboard(request):
         'ordem_atual': ordem_selecionada,
         'data_atual': data_filtro, 
         'tipo_atual': tipo_filtro,
+        'modo_atual':modo_view,          # pra manter o estado
     })
 
 @login_required
