@@ -708,32 +708,41 @@ def historicos(request):
         usuarios = usuarios.order_by(F('ultima_atividade').desc(nulls_last=True))
 
     else: # 'nome' (Padrão)
-        # Ordena apenas pelo username (case-insensitive para ignorar maiúsculas/minúsculas)
         usuarios = usuarios.order_by(Lower('username'))
 
     # ================= LOGICA DA PAGINAÇÃO =================
-    itens_por_pagina = 10  # quantidade de usuários por página 
+    itens_por_pagina = 12 
     paginator = Paginator(usuarios, itens_por_pagina)
     
     page_number = request.GET.get('page')
     usuarios_paginados = paginator.get_page(page_number)
-    # =======================================================
 
-
-    # PREENCHIMENTO DO PREVIEW (Captura o último objeto Chamado de cada usuário)
+    # ================= PREENCHIMENTO DO PREVIEW =================
     for usuario in usuarios_paginados:
         qs_chamados = Chamado.objects.filter(solicitante=usuario)
         if status_filtro:
             qs_chamados = qs_chamados.filter(status=status_filtro)
         
-        # Injeta dinamicamente o último chamado dentro do objeto do usuário
         usuario.ultimo_chamado = qs_chamados.order_by('-criado_em').first()
 
-    # Retorno do Render atualizado com o seu caminho de template original
-    return render(request, 'chamados_ti/historicos.html', {
+    # ============ DEFINIÇÃO DE MODO E TEMPLATE (CORRIGIDO) ==========
+    modo_param = request.GET.get('modo')
+    if modo_param in ['cards', 'lista']:
+        request.session['modo_view'] = modo_param
+
+    modo_view = request.session.get('modo_view', 'cards')
+
+    if modo_view == 'lista':
+        template_nome = 'chamados_ti/historicos_lista.html'
+    else:
+        template_nome = 'chamados_ti/historicos.html'
+
+    # Retorno do Render
+    return render(request, template_nome, {
         'usuarios': usuarios_paginados,
         'search_query': q,
         'ordenacao_selecionada': ordenar,
+        'modo_atual': modo_view,
     })
 
 def historico_usuario(request, usuario_id):

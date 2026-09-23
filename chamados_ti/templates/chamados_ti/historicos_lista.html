@@ -1,0 +1,183 @@
+{% extends 'chamados_ti/base.html' %}
+
+{% block content %}
+<div class="container py-4 animate__animated animate__fadeIn">
+    
+    <!-- Cabeçalho -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <span class="text-muted small text-uppercase fw-bold tracking-wider" style="font-size: 0.75rem; letter-spacing: 0.5px;">Central de Auditoria</span>
+            <h4 class="fw-bold m-0 text-dark" style="letter-spacing: -0.5px;">
+                <i class="fas fa-clipboard-list me-2 text-secondary"></i>Histórico por Solicitante
+            </h4>
+        </div>
+        <div>
+            <a href="{% url 'agente_dashboard' %}" class="btn btn-sm btn-outline-secondary px-3" style="border-radius: 6px; font-size: 0.85rem;">
+                <i class="fas fa-arrow-left me-1"></i>Painel Principal
+            </a>
+        </div>
+    </div>
+
+    <!-- Barra de Filtros e Alternador de Modo -->
+    <div class="card border-0 shadow-sm mb-4" style="border-radius: 12px;">
+        <div class="card-body p-3">
+            <form method="get" action="" class="row g-2 align-items-center">
+                
+                <!-- Busca (6 colunas) -->
+                <div class="col-md-6">
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-light-subtle text-muted"><i class="fas fa-search"></i></span>
+                        <input type="text" name="q" value="{{ search_query }}" class="form-control bg-light border-light-subtle text-dark" placeholder="Buscar por nome ou e-mail..." style="font-size: 0.9rem;">
+                    </div>
+                </div>
+                
+                <!-- Ordenação Automática (4 colunas) -->
+                <div class="col-md-4">
+                    <select name="ordenar" class="form-select bg-light border-light-subtle text-dark" style="font-size: 0.9rem;" onchange="this.form.submit()">
+                        <option value="nome" {% if ordenacao_selecionada == 'nome' %}selected{% endif %}>Ordem alfabética (A-Z)</option>
+                        <option value="recente" {% if ordenacao_selecionada == 'recente' %}selected{% endif %}>Última atividade (Geral)</option>
+                        <option value="ultimo_hoje" {% if ordenacao_selecionada == 'ultimo_hoje' %}selected{% endif %}>Quem abriu chamado HOJE</option>
+                        <option value="abertos_primeiro" {% if ordenacao_selecionada == 'abertos_primeiro' %}selected{% endif %}>Mais chamados em ABERTO</option>
+                        <option value="mais_chamados" {% if ordenacao_selecionada == 'mais_chamados' %}selected{% endif %}>Maior histórico (Total)</option>
+                    </select>
+                </div>
+
+                <!-- Botões de Alternância Cards / Lista (2 colunas) -->
+                <div class="col-md-2 text-md-end">
+                    <div class="btn-group" role="group" aria-label="Modo de Visualização">
+                        <a href="?modo=cards{% if search_query %}&q={{ search_query }}{% endif %}{% if ordenacao_selecionada %}&ordenar={{ ordenacao_selecionada }}{% endif %}" 
+                        class="btn btn-sm {% if modo_atual == 'cards' or not modo_atual %}btn-primary{% else %}btn-outline-secondary bg-white text-dark{% endif %}" 
+                        title="Visualização em Cards">
+                            <i class="fas fa-th-large"></i>
+                        </a>
+                        <a href="?modo=lista{% if search_query %}&q={{ search_query }}{% endif %}{% if ordenacao_selecionada %}&ordenar={{ ordenacao_selecionada }}{% endif %}" 
+                        class="btn btn-sm {% if modo_atual == 'lista' %}btn-primary{% else %}btn-outline-secondary bg-white text-dark{% endif %}" 
+                        title="Visualização em Lista">
+                            <i class="fas fa-list"></i>
+                        </a>
+                    </div>
+                </div>
+
+            </form>
+        </div>
+    </div>
+
+    <!-- Tabela de Históricos -->
+    <div class="card border-0 shadow-sm" style="border-radius: 12px; overflow: hidden;">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light border-bottom">
+                    <tr class="text-uppercase text-muted small fw-bold" style="font-size: 0.72rem; letter-spacing: 0.5px;">
+                        <th class="ps-4 py-3">Solicitante</th>
+                        <th class="text-center py-3">Status dos Chamados</th>
+                        <th class="py-3">Última Ocorrência</th>
+                        <th class="text-end pe-4 py-3">Ação</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for usuario in usuarios %}
+                        <tr>
+                            <!-- Solicitante -->
+                            <td class="ps-4 py-3">
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center me-3 flex-shrink-0" style="width: 38px; height: 38px;">
+                                        <i class="fas fa-user-circle fa-lg"></i>
+                                    </div>
+                                    <div class="overflow-hidden">
+                                        <h6 class="fw-bold m-0 text-dark text-truncate" style="font-size: 0.9rem;">{{ usuario.username }}</h6>
+                                        <small class="text-muted font-monospace d-block" style="font-size: 0.75rem;">{{ usuario.email }}</small>
+                                    </div>
+                                </div>
+                            </td>
+
+                            <!-- Badges de Status -->
+                            <td class="text-center py-3">
+                                <div class="d-inline-flex gap-1">
+                                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle font-monospace px-2 py-1" title="Fila (Pendentes)">
+                                        {{ usuario.chamados_pendentes }} <span class="fw-normal text-muted small">Fila</span>
+                                    </span>
+                                    <span class="badge bg-primary-subtle text-primary-emphasis border border-primary-subtle font-monospace px-2 py-1" title="Em Atendimento">
+                                        {{ usuario.chamados_em_progresso }} <span class="fw-normal text-muted small">Atend.</span>
+                                    </span>
+                                    <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle font-monospace px-2 py-1" title="Concluídos">
+                                        {{ usuario.concluidos_chamados }} <span class="fw-normal text-muted small">Feitos</span>
+                                    </span>
+                                </div>
+                            </td>
+
+                            <!-- Último Chamado -->
+                            <td class="py-3">
+                                {% if usuario.ultimo_chamado %}
+                                    <div class="d-flex flex-column">
+                                        <span class="text-dark fw-medium text-truncate" style="font-size: 0.82rem; max-width: 250px;">
+                                            #{{ usuario.ultimo_chamado.id }} - {{ usuario.ultimo_chamado.descricao|truncatechars:30 }}
+                                        </span>
+                                        <small class="text-muted font-monospace" style="font-size: 0.72rem;">
+                                            {{ usuario.ultima_atividade|date:"d/m/Y H:i" }}
+                                        </small>
+                                    </div>
+                                {% else %}
+                                    <span class="text-muted italic small">Nenhum registrado</span>
+                                {% endif %}
+                            </td>
+
+                            <!-- Botão Ver Histórico -->
+                            <td class="text-end pe-4 py-3">
+                                <a href="{% url 'historico_usuario' usuario.id %}" class="btn btn-sm btn-outline-primary fw-semibold px-3" style="border-radius: 6px; font-size: 0.8rem;">
+                                    Ver Histórico <i class="fas fa-chevron-right ms-1" style="font-size: 0.7rem;"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center py-5">
+                                <div class="text-muted mb-2"><i class="fas fa-users-slash fa-2x"></i></div>
+                                <span class="text-muted small">Nenhum solicitante encontrado com os parâmetros informados.</span>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Paginação -->
+    {% if usuarios.has_other_pages %}
+        <nav class="d-flex justify-content-center mt-4">
+            <ul class="pagination pagination-sm shadow-sm" style="border-radius: 6px; overflow: hidden;">
+                
+                {% if usuarios.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link text-secondary" href="?page=1{% if search_query %}&q={{ search_query }}{% endif %}{% if ordenacao_selecionada %}&ordenar={{ ordenacao_selecionada }}{% endif %}{% if modo_atual %}&modo={{ modo_atual }}{% endif %}">&laquo;&laquo;</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link text-secondary" href="?page={{ usuarios.previous_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if ordenacao_selecionada %}&ordenar={{ ordenacao_selecionada }}{% endif %}{% if modo_atual %}&modo={{ modo_atual }}{% endif %}">&laquo;</a>
+                    </li>
+                {% endif %}
+
+                {% for num in usuarios.paginator.page_range %}
+                    {% if usuarios.number == num %}
+                        <li class="page-item active">
+                            <span class="page-link bg-primary border-primary font-monospace">{{ num }}</span>
+                        </li>
+                    {% elif num > usuarios.number|add:'-3' and num < usuarios.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link text-secondary font-monospace" href="?page={{ num }}{% if search_query %}&q={{ search_query }}{% endif %}{% if ordenacao_selecionada %}&ordenar={{ ordenacao_selecionada }}{% endif %}{% if modo_atual %}&modo={{ modo_atual }}{% endif %}">{{ num }}</a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if usuarios.has_next %}
+                    <li class="page-item">
+                        <a class="page-link text-secondary" href="?page={{ usuarios.next_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if ordenacao_selecionada %}&ordenar={{ ordenacao_selecionada }}{% endif %}{% if modo_atual %}&modo={{ modo_atual }}{% endif %}">&raquo;</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link text-secondary" href="?page={{ usuarios.paginator.num_pages }}{% if search_query %}&q={{ search_query }}{% endif %}{% if ordenacao_selecionada %}&ordenar={{ ordenacao_selecionada }}{% endif %}{% if modo_atual %}&modo={{ modo_atual }}{% endif %}">&raquo;&raquo;</a>
+                    </li>
+                {% endif %}
+                
+            </ul>
+        </nav>
+    {% endif %}
+</div>
+{% endblock %}
