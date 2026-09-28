@@ -232,10 +232,10 @@ def agente_dashboard(request):
     base_ordem = ['ordem_status','prioridade', '-criado_em'] # ordem padrão
     if ordem_selecionada:
         # Se o usuário clicou em algum filtro de ordenação (ex: data)
-        chamados_list = chamados_list.order_by(*base_ordem, ordem_selecionada, '-criado_em')
+        chamados_list = chamados_list.order_by('ordem_status', ordem_selecionada, '-criado_em')
     else:
         # Se ele não clicou em nada, usamos a Prioridade como critério seguinte
-        chamados_list = chamados_list.order_by(*base_ordem, 'prioridade', '-criado_em')
+        chamados_list = chamados_list.order_by(*base_ordem)
 
     # 2. CALCULAR OS TOTAIS ANTES DA PAGINACÃO
     pendentes = chamados_list.filter(status='pendente').count()
