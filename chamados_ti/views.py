@@ -226,15 +226,16 @@ def agente_dashboard(request):
     if tipo_filtro:
         chamados_list = chamados_list.filter(tipo=tipo_filtro)
 
-    # 1. Pega a ordem da URL sem dar um valor padrão (default) ainda
+    # Ordem padrão: Status -> Prioridade (Alta p/ Baixa) -> Criado em (Mais recentes)
+    base_ordem = ['ordem_status', 'prioridade', '-criado_em']
+
     ordem_selecionada = request.GET.get('ordem')
 
-    base_ordem = ['ordem_status','prioridade', '-criado_em'] # ordem padrão
     if ordem_selecionada:
-        # Se o usuário clicou em algum filtro de ordenação (ex: data)
+        # Se o usuário escolheu uma ordenação manual (ex: por data), ela entra logo após o agrupamento por status
         chamados_list = chamados_list.order_by('ordem_status', ordem_selecionada, '-criado_em')
     else:
-        # Se ele não clicou em nada, usamos a Prioridade como critério seguinte
+        # Ordem padrão (Pendente > Em Progresso > Concluído, ordenados por Prioridade interna)
         chamados_list = chamados_list.order_by(*base_ordem)
 
     # 2. CALCULAR OS TOTAIS ANTES DA PAGINACÃO
