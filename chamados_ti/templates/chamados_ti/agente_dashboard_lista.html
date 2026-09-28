@@ -55,28 +55,68 @@
     <div class="card-body p-3">
         <form method="get" class="row g-2 align-items-end">
             
-            <div class="col-12 col-sm-6 col-md-2.5">
-                <label class="form-label small fw-semibold text-muted mb-1"><i class="fas fa-toggle-on me-1"></i>Status</label>
-                <select name="status" class="form-select border-light bg-light" style="border-radius: 8px; font-size: 0.9rem;">
-                    <option value="">Todos</option>
-                    <option value="pendente" {% if request.GET.status == 'pendente' %}selected{% endif %}>Pendente</option>
-                    <option value="em_progresso" {% if request.GET.status == 'em_progresso' %}selected{% endif %}>Em Progresso</option>
-                    <option value="concluido" {% if request.GET.status == 'concluido' %}selected{% endif %}>Concluído</option>
-                </select>
+            <!-- Filter: Status (Checkboxes em formato de Botões/Pills) -->
+            <div class="col-12 col-lg-4">
+                <label class="form-label small fw-semibold text-muted mb-1 d-block">
+                    <i class="fas fa-toggle-on me-1"></i>Status
+                </label>
+                <div class="btn-group w-100" role="group" aria-label="Filtro de Status">
+                    <!-- Pendente -->
+                    <input type="checkbox" 
+                           class="btn-check" 
+                           name="status" 
+                           value="pendente" 
+                           id="status_pendente" 
+                           onchange="this.form.submit()" 
+                           {% if 'pendente' in status_atual %}checked{% endif %}>
+                    <label class="btn btn-outline-warning btn-sm border-light-subtle py-2 fw-semibold" for="status_pendente" style="border-radius: 8px 0 0 8px; font-size: 0.85rem;">
+                        Pendente
+                    </label>
+
+                    <!-- Em Progresso -->
+                    <input type="checkbox" 
+                           class="btn-check" 
+                           name="status" 
+                           value="em_progresso" 
+                           id="status_em_progresso" 
+                           onchange="this.form.submit()" 
+                           {% if 'em_progresso' in status_atual %}checked{% endif %}>
+                    <label class="btn btn-outline-primary btn-sm border-light-subtle py-2 fw-semibold" for="status_em_progresso" style="font-size: 0.85rem;">
+                        Em Progresso
+                    </label>
+
+                    <!-- Concluído -->
+                    <input type="checkbox" 
+                           class="btn-check" 
+                           name="status" 
+                           value="concluido" 
+                           id="status_concluido" 
+                           onchange="this.form.submit()" 
+                           {% if 'concluido' in status_atual %}checked{% endif %}>
+                    <label class="btn btn-outline-success btn-sm border-light-subtle py-2 fw-semibold" for="status_concluido" style="border-radius: 0 8px 8px 0; font-size: 0.85rem;">
+                        Concluído
+                    </label>
+                </div>
             </div>
 
-            <div class="col-12 col-sm-6 col-md-2.5">
-                <label class="form-label small fw-semibold text-muted mb-1"><i class="fas fa-calendar-alt me-1"></i>Período</label>
-                <select name="data" class="form-select border-light bg-light" style="border-radius: 8px; font-size: 0.9rem;">
+            <!-- Filter: Período -->
+            <div class="col-12 col-sm-4 col-lg-2">
+                <label class="form-label small fw-semibold text-muted mb-1">
+                    <i class="fas fa-calendar-alt me-1"></i>Período
+                </label>
+                <select name="data" class="form-select border-light bg-light" style="border-radius: 8px; font-size: 0.9rem;" onchange="this.form.submit()">
                     <option value="">Sempre</option>
                     <option value="hoje" {% if request.GET.data == 'hoje' %}selected{% endif %}>Hoje</option>
                     <option value="semana" {% if request.GET.data == 'semana' %}selected{% endif %}>Últimos 7 dias</option>
                 </select>
             </div>
 
-            <div class="col-12 col-sm-6 col-md-2.5">
-                <label class="form-label small fw-semibold text-muted mb-1"><i class="fas fa-sort-amount-down me-1"></i>Ordenar</label>
-                <select name="ordem" class="form-select border-light bg-light" style="border-radius: 8px; font-size: 0.9rem;">
+            <!-- Filter: Ordenar -->
+            <div class="col-12 col-sm-4 col-lg-2">
+                <label class="form-label small fw-semibold text-muted mb-1">
+                    <i class="fas fa-sort-amount-down me-1"></i>Ordenar
+                </label>
+                <select name="ordem" class="form-select border-light bg-light" style="border-radius: 8px; font-size: 0.9rem;" onchange="this.form.submit()">
                     <option value="-criado_em" {% if request.GET.ordem == '-criado_em' %}selected{% endif %}>Mais Recentes</option>
                     <option value="criado_em" {% if request.GET.ordem == 'criado_em' %}selected{% endif %}>Mais Antigos</option>
                     <option value="prioridade" {% if request.GET.ordem == 'prioridade' %}selected{% endif %}>Maior Prioridade</option>
@@ -84,24 +124,27 @@
                 </select>
             </div>
 
-            <div class="col-12 col-sm-6 col-md-2.5">
-                <label class="form-label small fw-semibold text-muted mb-1"><i class="fas fa-sliders-h me-1"></i>Origem</label>
-                <select name="tipo_filtro" class="form-select border-light bg-light" style="border-radius: 8px; font-size: 0.9rem;">
+            <!-- Filter: Origem -->
+            <div class="col-12 col-sm-4 col-lg-2">
+                <label class="form-label small fw-semibold text-muted mb-1">
+                    <i class="fas fa-sliders-h me-1"></i>Origem
+                </label>
+                <select name="tipo_filtro" class="form-select border-light bg-light" style="border-radius: 8px; font-size: 0.9rem;" onchange="this.form.submit()">
                     <option value="">Todos os Tipos</option>
-                    <option value="equipamento" {% if request.GET.tipo_filtro == 'equipamento' %}selected{% endif %}>Somente Equipamento</option>
-                    <option value="sistema" {% if request.GET.tipo_filtro == 'sistema' %}selected{% endif %}>Somente Sistema</option>
-                    <option value="duvidas" {% if request.GET.tipo_filtro == 'duvidas' %}selected{% endif %}>Somente Dúvidas</option>
+                    <option value="equipamento" {% if request.GET.tipo_filtro == 'equipamento' %}selected{% endif %}>Equipamento</option>
+                    <option value="sistema" {% if request.GET.tipo_filtro == 'sistema' %}selected{% endif %}>Sistema</option>
+                    <option value="duvidas" {% if request.GET.tipo_filtro == 'duvidas' %}selected{% endif %}>Dúvidas</option>
                 </select>
             </div>
 
-            <div class="col-12 col-md-2 d-flex gap-2">
-                <button type="submit" class="btn btn-primary w-100 fw-semibold text-nowrap" style="height: 38px; border-radius: 8px;">
-                    <i class="fas fa-filter me-1"></i>Filtrar
-                </button>
-                <a href="." class="btn btn-outline-secondary text-nowrap d-flex align-items-center justify-content-center" style="height: 38px; border-radius: 8px; width: 60px;">
+            <!-- Botão Limpar Filtros -->
+            <div class="col-12 col-lg-2 ms-auto text-end">
+                <a href="?" class="btn btn-outline-secondary w-100 text-nowrap d-flex align-items-center justify-content-center gap-1" style="height: 38px; border-radius: 8px; font-size: 0.875rem;" title="Limpar todos os filtros">
                     <i class="fas fa-eraser"></i>
+                    <span>Limpar</span>
                 </a>
             </div>
+
         </form>
     </div>
 </div>

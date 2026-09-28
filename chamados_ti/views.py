@@ -210,9 +210,9 @@ def agente_dashboard(request):
         )
     )
 
-    status_filtro = request.GET.get('status')
+    status_filtro = request.GET.getlist('status')
     if status_filtro:
-        chamados_list = chamados_list.filter(status=status_filtro)
+        chamados_list = chamados_list.filter(status__in=status_filtro)
 
     data_filtro = request.GET.get('data')
     if data_filtro == 'hoje':
