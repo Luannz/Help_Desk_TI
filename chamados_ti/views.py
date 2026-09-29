@@ -253,9 +253,9 @@ def agente_dashboard(request):
     # ============ Definição qual dos templates ta selecionado ==========
     modo_param = request.GET.get('modo')
     if modo_param in ['cards', 'lista']:
-        request.session['modo_view'] = modo_param
+        request.session['modo_view_dashboard'] = modo_param
 
-    modo_view = request.session.get('modo_view', 'cards') # o padrão é 'cards'
+    modo_view = request.session.get('modo_view_dashboard', 'cards') # o padrão é 'cards'
 
     if modo_view == 'lista':
         template_nome = 'chamados_ti/agente_dashboard_lista.html'
@@ -729,9 +729,9 @@ def historicos(request):
     # ============ DEFINIÇÃO DE MODO E TEMPLATE (CORRIGIDO) ==========
     modo_param = request.GET.get('modo')
     if modo_param in ['cards', 'lista']:
-        request.session['modo_view'] = modo_param
+        request.session['modo_view_historico'] = modo_param
 
-    modo_view = request.session.get('modo_view', 'cards')
+    modo_view = request.session.get('modo_view_historico', 'cards')
 
     if modo_view == 'lista':
         template_nome = 'chamados_ti/historicos_lista.html'
