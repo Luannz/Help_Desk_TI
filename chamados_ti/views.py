@@ -231,9 +231,17 @@ def agente_dashboard(request):
 
     ordem_selecionada = request.GET.get('ordem')
 
-    if ordem_selecionada:
-        # Se o usuário escolheu uma ordenação manual (ex: por data), ela entra logo após o agrupamento por status
-        chamados_list = chamados_list.order_by('ordem_status','prioridade', ordem_selecionada, '-criado_em')
+    if ordem_selecionada == 'criado_em':
+        # Ordenar por: Status -> Data (Mais Antigos) -> Prioridade (Alta p/ Baixa)
+        chamados_list = chamados_list.order_by('ordem_status', 'criado_em', 'prioridade')
+
+    elif ordem_selecionada == 'prioridade':
+        # Ordenar por: Status -> Prioridade (Maior Alta=1 p/ Baixa=3) -> Data (Mais Recentes)
+        chamados_list = chamados_list.order_by('ordem_status', 'prioridade', '-criado_em')
+
+    elif ordem_selecionada == '-prioridade':
+        # Ordenar por: Status -> Prioridade (Menor Baixa=3 p/ Alta=1) -> Data (Mais Recentes)
+        chamados_list = chamados_list.order_by('ordem_status', '-prioridade', '-criado_em')
     else:
         # Ordem padrão (Pendente > Em Progresso > Concluído, ordenados por Prioridade interna)
         chamados_list = chamados_list.order_by(*base_ordem)
