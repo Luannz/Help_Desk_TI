@@ -171,8 +171,23 @@ def solicitante_dashboard(request):
         uma_semana_atras = datetime.today() - timedelta(days=7)
         chamados_list = chamados_list.filter(criado_em__gte=uma_semana_atras)
 
-    ordem = request.GET.get('ordem', '-criado_em')
-    chamados_list = chamados_list.order_by(ordem)
+    ordem = request.GET.get('ordem')
+
+    if ordem:
+        # O usuário escolheu uma ordem: respeita a escolha dele
+        chamados_list = chamados_list.order_by(ordem)
+    else:
+        # Padrão: pendentes > em progresso > concluídos,
+        # e dentro de cada status, prioridade 1 (alta) até 3 (baixa)
+        chamados_list = chamados_list.annotate(
+            peso_status=Case(
+                When(status='pendente', then=Value(0)),
+                When(status='em_progresso', then=Value(1)),
+                When(status='concluido', then=Value(2)),
+                default=Value(3),
+                output_field=IntegerField(),
+            ),
+        ).order_by('peso_status', 'prioridade', '-criado_em')
 
     # Paginação (depois dos filtros)
     paginator = Paginator(chamados_list, 12) # chamados por pagina
@@ -182,7 +197,7 @@ def solicitante_dashboard(request):
     return render(request, 'chamados_ti/solicitante_dashboard.html', {
         'chamados': chamados_paginados, 
         'status_atual': status_filtro,
-        'ordem_atual': ordem,
+        'ordem_atual': ordem or '',
         'data_atual': data_filtro,
     })
 

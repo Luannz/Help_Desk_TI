@@ -1,6 +1,25 @@
 {% extends 'chamados_ti/base.html' %}
-
 {% block content %}
+<style>
+form.arrastando {
+    outline: 2px dashed #0d6efd;
+    outline-offset: 4px;
+    background: rgba(13, 110, 253, 0.04);
+}
+
+.btn-remover-anexo {
+    border: 0;
+    background: transparent;
+    color: inherit;
+    padding: 0 0 0 0.25rem;
+    line-height: 1;
+    cursor: pointer;
+    opacity: 0.6;
+}
+
+.btn-remover-anexo:hover { opacity: 1; color: #dc3545; }
+</style>
+
 <div class="container py-3 animate__animated animate__fadeIn">
     <div class="row">
         <div class="col-lg-9 mx-auto">
@@ -414,67 +433,124 @@ if (textareaMensagem && formChamado) {
     });
 }
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     const textareaMensagem = document.getElementById('texto_mensagem');
     const inputArquivos = document.getElementById('input_arquivos_agente');
 
-    // Executa apenas se os dois elementos existirem na página (ex: se o usuário for agente)
-    if (textareaMensagem && inputArquivos) {
+    // Executa apenas se os dois elementos existirem (ex: se o usuário for agente)
+    if (!textareaMensagem || !inputArquivos) return;
 
-        textareaMensagem.addEventListener('paste', function(e) {
-            // Pega os itens colados do clipboard
-            const clipboardItems = (e.clipboardData || e.originalEvent.clipboardData).items;
+    const form = textareaMensagem.closest('form') || textareaMensagem;
 
-            for (let item of clipboardItems) {
-                // Verifica se o item colado é uma imagem
-                if (item.type.indexOf('image') !== -1) {
-                    
-                    // Extrai o arquivo de imagem colado
-                    const blob = item.getAsFile();
-                    
-                    // Cria um nome de arquivo padrão para o print colado
-                    const nomeArquivo = `print_${new Date().getTime()}.png`;
-                    const arquivoImagem = new File([blob], nomeArquivo, { type: blob.type });
+    // Nome padrão para prints colados (o navegador manda "image.png")
+    function normalizarArquivo(file) {
+        const nomeGenerico = !file.name || /^image\.\w+$/i.test(file.name);
+        if (!nomeGenerico) return file;
 
-                    // Usa DataTransfer para manipular os arquivos do input file
-                    const dataTransfer = new DataTransfer();
+        const ext = (file.type.split('/')[1] || 'png').replace('jpeg', 'jpg');
+        return new File([file], `print_${Date.now()}.${ext}`, { type: file.type });
+    }
 
-                    // MANTÉM os arquivos que já existiam no input (se houver)
-                    if (inputArquivos.files.length > 0) {
-                        Array.from(inputArquivos.files).forEach(file => dataTransfer.items.add(file));
-                    }
+    // Adiciona arquivos ao input, mantendo os que já estavam e evitando duplicados
+    function adicionarArquivos(listaArquivos) {
+        const dt = new DataTransfer();
+        const existentes = Array.from(inputArquivos.files);
+        existentes.forEach(f => dt.items.add(f));
 
-                    // Adiciona o novo print colado
-                    dataTransfer.items.add(arquivoImagem);
+        const mesmo = (a, b) =>
+            a.name === b.name && a.size === b.size && a.lastModified === b.lastModified;
 
-                    // Atualiza o input file com os novos arquivos
-                    inputArquivos.files = dataTransfer.files;
+        Array.from(listaArquivos).forEach(f => {
+            const novo = normalizarArquivo(f);
+            if (!existentes.some(e => mesmo(e, novo))) dt.items.add(novo);
+        });
 
-                    // Atualiza a visualização dos arquivos (tags na tela)
-                    mostrarPreviewArquivos(inputArquivos);
-                }
+        inputArquivos.files = dt.files;
+        mostrarPreviewArquivos(inputArquivos);
+    }
+
+    // ---- COLAR (qualquer tipo de arquivo) ----
+    textareaMensagem.addEventListener('paste', function (e) {
+        const clipboard = e.clipboardData || e.originalEvent.clipboardData;
+        const arquivos = clipboard ? clipboard.files : [];
+
+        // Só intercepta se houver arquivo; texto comum continua colando normal
+        if (arquivos && arquivos.length > 0) {
+            e.preventDefault();
+            adicionarArquivos(arquivos);
+        }
+    });
+
+    // ---- ARRASTAR E SOLTAR ----
+    ['dragenter', 'dragover'].forEach(evento => {
+        form.addEventListener(evento, function (e) {
+            if (e.dataTransfer && Array.from(e.dataTransfer.types).includes('Files')) {
+                e.preventDefault();
+                form.classList.add('arrastando');
             }
         });
-    }
+    });
+
+    form.addEventListener('dragleave', function (e) {
+        // só remove o destaque ao sair de fato do formulário
+        if (!form.contains(e.relatedTarget)) form.classList.remove('arrastando');
+    });
+
+    form.addEventListener('drop', function (e) {
+        if (e.dataTransfer && e.dataTransfer.files.length > 0) {
+            e.preventDefault();
+            form.classList.remove('arrastando');
+            adicionarArquivos(e.dataTransfer.files);
+        }
+    });
 });
 
-// Função para exibir as tags visuais dos arquivos selecionados
+// Exibe as tags dos arquivos selecionados, cada uma com um botão "×" para remover
 function mostrarPreviewArquivos(input) {
     const previewContainer = document.getElementById('file-preview-list');
     if (!previewContainer) return;
-    
+
     previewContainer.innerHTML = '';
-    
+
     if (input.files && input.files.length > 0) {
         Array.from(input.files).forEach((file, index) => {
             const badge = document.createElement('span');
             badge.className = 'badge bg-primary-subtle text-primary border border-primary-subtle font-monospace d-inline-flex align-items-center gap-1';
             badge.style.fontSize = '0.75rem';
-            badge.innerHTML = `<i class="fas fa-paperclip"></i> ${file.name}`;
-            
+
+            const icone = document.createElement('i');
+            icone.className = 'fas fa-paperclip';
+
+            // textContent evita problema com nomes de arquivo que tenham caracteres especiais
+            const nome = document.createElement('span');
+            nome.textContent = file.name;
+
+            const botaoRemover = document.createElement('button');
+            botaoRemover.type = 'button'; // não envia o formulário
+            botaoRemover.className = 'btn-remover-anexo';
+            botaoRemover.title = 'Remover anexo';
+            botaoRemover.setAttribute('aria-label', 'Remover ' + file.name);
+            botaoRemover.innerHTML = '<i class="fas fa-xmark"></i>';
+            botaoRemover.addEventListener('click', function () {
+                removerArquivo(input, index);
+            });
+
+            badge.append(icone, nome, botaoRemover);
             previewContainer.appendChild(badge);
         });
     }
+}
+
+// Remove um arquivo da lista do input pelo índice
+function removerArquivo(input, index) {
+    const dt = new DataTransfer();
+
+    Array.from(input.files).forEach((file, i) => {
+        if (i !== index) dt.items.add(file);
+    });
+
+    input.files = dt.files;       // não dispara o evento "change"...
+    mostrarPreviewArquivos(input); // ...então redesenhamos a lista manualmente
 }
 
 // Função para carregar a imagem dinamicamente dentro do Modal
