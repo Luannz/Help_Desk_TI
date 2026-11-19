@@ -160,23 +160,11 @@
                         {{ chamado.descricao|truncatewords:15 }}
                     </p>
                 </div>
-
-                {% if chamado.observacoes_agente %}
-                <div class="mt-2 obs-{{ chamado.status }}">
-                    <label class="small fw-bold text-uppercase d-block mb-1" style="font-size: 0.7rem; letter-spacing: 0.5px;">
-                        <i class="fas fa-comment-dots me-1"></i>Parecer Técnico
-                    </label>
-                    <p class="m-0 text-truncate" style="font-size: 0.85rem; font-style: italic;" title="{{ chamado.observacoes_agente }}">
-                        "{{ chamado.observacoes_agente }}"
-                    </p>
-                </div>
-                {% endif %}
                 <div class="pt-2 border-top mt-2">
                     <a href="{% url 'detalhe_chamado' chamado.id %}" class="btn btn-sm btn-white w-100 border text-secondary fw-semibold bg-white hover-btn" style="font-size: 0.8rem; border-radius: 6px;">
                         Visualizar Atendimento Completo
                     </a>
                 </div>
-
             </div>
         </div>
     </div>

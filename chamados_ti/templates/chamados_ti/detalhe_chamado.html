@@ -205,21 +205,7 @@
                     </div>
 
                     
-                    <div class="border-top pt-3" id="historico-chat">
-    
-                        {# 1. SEÇÃO DE CONCLUSÃO (Só aparece se o Agente já tiver digitado ) #}
-                        {% if chamado.observacoes_agente %}
-                            <div class="mb-4">
-                                <span class="fw-bold text-success small text-uppercase mb-2 d-block" style="letter-spacing: 0.5px;">
-                                    <i class="fas fa-check-circle me-1"></i>Observação Técnica 
-                                </span>
-                                <div class="p-3 rounded border border-success-subtle font-monospace text-dark pre-wrap shadow-xs" 
-                                    style="border-radius: 8px; font-size: 0.88rem; line-height: 1.5; background-color: #f4fbf7!important;">
-                                    {{ chamado.observacoes_agente|linebreaksbr }}
-                                </div>
-                            </div>
-                        {% endif %}
-
+                    <div class="border-top pt-3" id="historico-chat">                        
                         {% if chamado.status == 'pendente' %}
                             <div class="alert alert-light text-muted d-flex align-items-start py-3 border border-light-subtle mt-3" style="border-radius: 6px; background-color: #fcfcfc;">
                                 <i class="fa-solid fa-spinner fa-spin me-2 text-warning-emphasis opacity-75 mt-0.5" style="font-size: 0.95rem;"></i>
